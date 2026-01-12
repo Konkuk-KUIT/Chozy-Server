@@ -1,7 +1,9 @@
 ## Chozy BE Repository
 
-https://chozy.net
-http://3.35.168.48
+- **HTTPS** domain
+  - https://chozy.net
+- **HTTP** domain
+  - http://3.35.168.48
 
 ### Info
 - Java 17, Spring boot 3.4.1, JPA
