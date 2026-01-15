@@ -28,4 +28,26 @@ public interface FollowRequestRepository extends JpaRepository<FollowRequest, Lo
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("update FollowRequest fr set fr.status = :status where fr.id = :id")
     int changeStatus(@Param("id") Long id, @Param("status") FollowRequestStatus status);
+
+    // 차단 시 펜딩 삭제
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        delete from FollowRequest fr
+         where fr.requesterId = :requesterId
+           and fr.targetId = :targetId
+           and fr.status = com.kuit.chozy.userrelation.domain.FollowRequestStatus.PENDING
+    """)
+    int deletePending(@Param("requesterId") Long requesterId,
+                      @Param("targetId") Long targetId);
+
+    // 양방향 처리
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        delete from FollowRequest fr
+         where ((fr.requesterId = :meId and fr.targetId = :targetUserId)
+             or (fr.requesterId = :targetUserId and fr.targetId = :meId))
+           and fr.status = com.kuit.chozy.userrelation.domain.FollowRequestStatus.PENDING
+    """)
+    int deletePendingBetween(@Param("meId") Long meId,
+                             @Param("targetUserId") Long targetUserId);
 }

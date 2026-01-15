@@ -1,5 +1,7 @@
 package com.kuit.chozy.userrelation.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.time.LocalDateTime;
 
 public class BlockResponse {
@@ -18,6 +20,7 @@ public class BlockResponse {
         return targetUserId;
     }
 
+    @JsonProperty("isBlocked")
     public boolean isBlocked() {
         return isBlocked;
     }

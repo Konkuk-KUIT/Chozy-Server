@@ -19,6 +19,7 @@ public enum ErrorCode {
 
     // 404
     TARGET_USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4041, "대상 사용자를 찾을 수 없습니다."),
+    NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
 
     // 409
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),
