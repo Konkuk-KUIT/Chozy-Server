@@ -1,58 +1,93 @@
 package com.kuit.chozy.user.domain;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "is_account_public", nullable = false)
-    private boolean isAccountPublic;
-
-    @Column(name = "login_id", nullable = false, length = 50)
+    // =============== Auth ===============
+    @Column(nullable = false, unique = true, length = 50)
     private String loginId;
+
+    @Column(nullable = false)
+    private String password;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    // =============== Profile ===============
+    @Column(nullable = false)
+    private String name;
 
     @Column(nullable = false, length = 50)
     private String nickname;
 
-    @Column(name = "profile_image_url", length = 2048)
+    @Column(length = 20)
+    private String phoneNumber;
+
+    @Column
+    private String statusMessage;
+
+    @Column
+    private String country;
+
+    @Column
+    private LocalDate birthDate;
+
+    @Column
+    private float height; // cm
+
+    @Column
+    private float weight; // kg
+
+    @Column(length = 2048)
     private String profileImageUrl;
 
+    // =============== Privacy ===============
+    @Column(name = "is_account_public", nullable = false)
+    private boolean isAccountPublic;
+
+    @Column(name = "is_birth_public", nullable = false)
+    private boolean isBirthPublic;
+
+    @Column(name = "is_height_public", nullable = false)
+    private boolean isHeightPublic;
+
+    @Column(name = "is_weight_public", nullable = false)
+    private boolean isWeightPublic;
+
+    // =============== Status ===============
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    protected User() {
-    }
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
-    public Long getId() {
-        return id;
-    }
+    @UpdateTimestamp
+    @Column
+    private LocalDateTime updatedAt;
 
-    // 공개 계정이면 true
-    public boolean isAccountPublic() {
-        return isAccountPublic;
-    }
-
-    public UserStatus getStatus() {
-        return status;
-    }
-
-    public String getLoginId() {
-        return loginId;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public String getProfileImageUrl() {
-        return profileImageUrl;
-    }
-
+    @Column(name = "password_updated_at")
+    private LocalDateTime passwordUpdatedAt;
 
     // 팔로우에서 쓸 활성 여부 헬퍼
     public boolean isActive() {
