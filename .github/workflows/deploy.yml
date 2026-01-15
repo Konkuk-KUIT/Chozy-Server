@@ -43,5 +43,4 @@ jobs:
           command_timeout: '30m'
           script: |
             cd /opt/chozy
-            docker compose pull
             docker compose up -d --remove-orphans
