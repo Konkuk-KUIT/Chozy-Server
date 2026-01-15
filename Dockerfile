@@ -1,4 +1,4 @@
-FROM amazoncorretto:17
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
