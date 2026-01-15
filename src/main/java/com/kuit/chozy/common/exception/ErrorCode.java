@@ -10,6 +10,7 @@ public enum ErrorCode {
     SELF_BLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4004, "자기 자신은 차단할 수 없습니다."),
     SELF_UNBLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4006, "자기 자신에 대한 차단은 해제할 수 없습니다."),
     ALREADY_BLOCKED(HttpStatus.BAD_REQUEST, 4005, "이미 차단한 사용자입니다."),
+    SELF_CLOSE_FRIEND_NOT_ALLOWED(HttpStatus.BAD_REQUEST,4007, "자기 자신은 친한 친구로 설정할 수 없습니다."),
 
     // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 4012, "인증이 필요합니다."),
@@ -25,6 +26,7 @@ public enum ErrorCode {
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),
     ALREADY_FOLLOWING(HttpStatus.CONFLICT, 4096, "이미 팔로우한 사용자입니다."),
     ALREADY_REQUESTED(HttpStatus.CONFLICT, 4098, "이미 팔로우 요청을 보낸 사용자입니다."),
+    BLOCK_RELATION_EXISTS(HttpStatus.CONFLICT,4097, "차단 관계가 존재하여 요청을 처리할 수 없습니다."),
 
     // 500
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 5000, "서버 내부 오류가 발생했습니다.");
