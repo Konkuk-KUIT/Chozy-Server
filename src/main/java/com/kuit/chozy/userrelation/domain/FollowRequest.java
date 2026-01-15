@@ -24,6 +24,9 @@ public class FollowRequest {
     @Column(name = "requested_at", nullable = false)
     private LocalDateTime requestedAt;
 
+    @Column(name = "processed_at")
+    private LocalDateTime processedAt;
+
     protected FollowRequest() {
     }
 
@@ -32,6 +35,7 @@ public class FollowRequest {
         this.targetId = targetId;
         this.status = status;
         this.requestedAt = requestedAt;
+        this.processedAt = processedAt;
     }
 
     public Long getId() {
@@ -57,4 +61,19 @@ public class FollowRequest {
     public void changeStatus(FollowRequestStatus status) {
         this.status = status;
     }
+
+    public boolean isPending() {
+        return this.status == FollowRequestStatus.PENDING;
+    }
+
+    public void accept(LocalDateTime processedAt) {
+        this.status = FollowRequestStatus.ACCEPTED;
+        this.processedAt = processedAt;
+    }
+
+    public void reject(LocalDateTime processedAt) {
+        this.status = FollowRequestStatus.REJECTED;
+        this.processedAt = processedAt;
+    }
+
 }

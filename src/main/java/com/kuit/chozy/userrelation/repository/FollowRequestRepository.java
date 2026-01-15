@@ -2,6 +2,9 @@ package com.kuit.chozy.userrelation.repository;
 
 import com.kuit.chozy.userrelation.domain.FollowRequest;
 import com.kuit.chozy.userrelation.domain.FollowRequestStatus;
+import com.kuit.chozy.userrelation.dto.response.FollowRequestListItemResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -50,4 +53,20 @@ public interface FollowRequestRepository extends JpaRepository<FollowRequest, Lo
     """)
     int deletePendingBetween(@Param("meId") Long meId,
                              @Param("targetUserId") Long targetUserId);
+
+    @Query("""
+        select new com.kuit.chozy.userrelation.dto.response.FollowRequestListItemResponse(
+            fr.id,
+            new com.kuit.chozy.userrelation.dto.response.FollowRequestFromUserResponse(
+                u.id, u.loginId, u.nickname, u.profileImageUrl
+            ),
+            fr.requestedAt
+        )
+        from FollowRequest fr
+        join User u on u.id = fr.requesterId
+        where fr.targetId = :meUserId
+          and fr.status = 'PENDING'
+        order by fr.requestedAt desc
+        """)
+    Page<FollowRequestListItemResponse> findMyPendingRequests(@Param("meUserId") Long meUserId, Pageable pageable);
 }
