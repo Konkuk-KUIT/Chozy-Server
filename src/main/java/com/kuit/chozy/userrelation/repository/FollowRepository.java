@@ -1,9 +1,13 @@
 package com.kuit.chozy.userrelation.repository;
 
 import com.kuit.chozy.userrelation.domain.Follow;
+import com.kuit.chozy.userrelation.dto.FollowStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -25,4 +29,19 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
     boolean existsByFollowerIdAndFollowingId(Long followerId, Long followingId);
 
     Optional<Follow> findByFollowerIdAndFollowingId(Long followerId, Long followingId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+        update Follow f
+           set f.status = :toStatus
+         where f.followerId = :followerId
+           and f.followingId = :followingId
+           and f.status = :fromStatus
+    """)
+    int updateStatus(
+            @Param("followerId") Long followerId,
+            @Param("followingId") Long followingId,
+            @Param("fromStatus") FollowStatus fromStatus,
+            @Param("toStatus") FollowStatus toStatus
+    );
 }
