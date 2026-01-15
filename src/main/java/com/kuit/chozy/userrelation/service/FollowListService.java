@@ -93,7 +93,9 @@ public class FollowListService {
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
-        Set<Long> blockedSet = blockRepository.findByBlockerIdAndBlockedIdIn(meId, followerIds).stream()
+        Set<Long> blockedSet = blockRepository
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(meId, followerIds)
+                .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
 
@@ -200,7 +202,9 @@ public class FollowListService {
                 .map(Follow::getFollowerId)
                 .collect(Collectors.toSet());
 
-        Set<Long> blockedSet = blockRepository.findByBlockerIdAndBlockedIdIn(meId, followingIds).stream()
+        Set<Long> blockedSet = blockRepository
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(meId, followingIds)
+                .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
 

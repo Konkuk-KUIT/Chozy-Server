@@ -7,6 +7,9 @@ public enum ErrorCode {
     // 400
     SELF_FOLLOW_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4003, "자기 자신은 팔로우할 수 없습니다."),
     INVALID_REQUEST(org.springframework.http.HttpStatus.BAD_REQUEST, 4001, "요청 값이 올바르지 않습니다."),
+    SELF_BLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4004, "자기 자신은 차단할 수 없습니다."),
+    SELF_UNBLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4006, "자기 자신에 대한 차단은 해제할 수 없습니다."),
+    ALREADY_BLOCKED(HttpStatus.BAD_REQUEST, 4005, "이미 차단한 사용자입니다."),
 
     // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 4012, "인증이 필요합니다."),
@@ -16,6 +19,7 @@ public enum ErrorCode {
 
     // 404
     TARGET_USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4041, "대상 사용자를 찾을 수 없습니다."),
+    NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
 
     // 409
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),

@@ -59,12 +59,12 @@ public class FollowService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_USER_NOT_FOUND));
 
         // 내가 상대를 차단한 경우
-        if (blockRepository.existsByBlockerIdAndBlockedId(meId, targetUserId)) {
+        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(meId, targetUserId)) {
             throw new ApiException(ErrorCode.CANNOT_FOLLOW_BLOCKED_USER);
         }
 
         // 상대가 나를 차단한 경우
-        if (blockRepository.existsByBlockerIdAndBlockedId(targetUserId, meId)) {
+        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, meId)) {
             throw new ApiException(ErrorCode.CANNOT_FOLLOW_BLOCKED_USER);
         }
 

@@ -1,5 +1,6 @@
 package com.kuit.chozy.userrelation.domain;
 
+import com.kuit.chozy.userrelation.dto.FollowStatus;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
@@ -25,6 +26,10 @@ public class Follow {
     @Column(name = "following_id", nullable = false)
     private Long followingId;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private FollowStatus status;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -34,6 +39,7 @@ public class Follow {
     public Follow(Long followerId, Long followingId, LocalDateTime createdAt) {
         this.followerId = followerId;
         this.followingId = followingId;
+        this.status = FollowStatus.FOLLOWING; // 기본값
         this.createdAt = createdAt;
     }
 
@@ -49,7 +55,15 @@ public class Follow {
         return followingId;
     }
 
+    public FollowStatus getStatus() {
+        return status;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public void updateStatus(FollowStatus status) {
+        this.status = status;
     }
 }
