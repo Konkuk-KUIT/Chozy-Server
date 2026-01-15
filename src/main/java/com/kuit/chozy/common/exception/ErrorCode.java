@@ -6,6 +6,7 @@ public enum ErrorCode {
 
     // 400
     SELF_FOLLOW_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4003, "자기 자신은 팔로우할 수 없습니다."),
+    INVALID_REQUEST(org.springframework.http.HttpStatus.BAD_REQUEST, 4001, "요청 값이 올바르지 않습니다."),
 
     // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 4012, "인증이 필요합니다."),
