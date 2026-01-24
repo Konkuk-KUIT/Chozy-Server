@@ -60,6 +60,9 @@ public class User {
     @Column(length = 2048)
     private String profileImageUrl;
 
+    @Column(length = 2048)
+    private String backgroundImageUrl;
+
     // =============== Privacy ===============
     @Column(name = "is_account_public", nullable = false)
     private boolean isAccountPublic;

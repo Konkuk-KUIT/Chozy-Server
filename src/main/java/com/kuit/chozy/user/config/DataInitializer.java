@@ -8,6 +8,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+import java.sql.Date;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -24,33 +26,34 @@ public class DataInitializer implements CommandLineRunner {
 
     private void initializeAdminUser() {
         String adminLoginId = "admin";
-        
-        if (userRepository.findByLoginId(adminLoginId).isEmpty()) {
-            User adminUser = User.builder()
-                    .loginId(adminLoginId)
-                    .password("admin123")
-                    .email("admin@chozy.com")
-                    .name("Admin")
-                    .nickname("admin")
-                    .phoneNumber(null)
-                    .statusMessage("관리자 계정입니다")
-                    .country("Korea")
-                    .birthDate(null)
-                    .height(0.0f)
-                    .weight(0.0f)
-                    .profileImageUrl(null)
-                    .isAccountPublic(true)
-                    .isBirthPublic(false)
-                    .isHeightPublic(false)
-                    .isWeightPublic(false)
-                    .status(UserStatus.ACTIVE)
-                    .passwordUpdatedAt(LocalDateTime.now())
-                    .build();
 
-            userRepository.save(adminUser);
-            log.info("Admin user created successfully with loginId: {}", adminLoginId);
-        } else {
-            log.info("Admin user already exists with loginId: {}", adminLoginId);
-        }
+        User admin = userRepository.findByLoginId(adminLoginId)
+                .orElseGet(() -> User.builder()
+                        .loginId(adminLoginId)
+                        .build()
+                );
+
+        admin.setPassword("admin123");
+        admin.setEmail("admin@chozy.com");
+        admin.setName("Admin");
+        admin.setNickname("admin");
+        admin.setPhoneNumber("010-9475-0679");
+        admin.setStatusMessage("관리자 계정입니다");
+        admin.setCountry("KOR");
+        admin.setBirthDate(LocalDate.of(2002,10,4));
+        admin.setHeight(163f);
+        admin.setWeight(52f);
+        admin.setProfileImageUrl("profile");
+        admin.setBackgroundImageUrl("bg");
+        admin.setAccountPublic(true);
+        admin.setBirthPublic(false);
+        admin.setHeightPublic(false);
+        admin.setWeightPublic(false);
+        admin.setStatus(UserStatus.ACTIVE);
+        admin.setPasswordUpdatedAt(LocalDateTime.now());
+
+        userRepository.save(admin);
+
+        log.info("Admin user initialized (upsert): {}", adminLoginId);
     }
 }
