@@ -8,9 +8,14 @@ import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
 import com.kuit.chozy.me.dto.response.ReviewListResponse;
 import com.kuit.chozy.me.service.ProfileService;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Enumeration;
+
+@Slf4j
 @RestController
 @RequestMapping("/me")
 @RequiredArgsConstructor
@@ -28,8 +33,17 @@ public class ProfileController {
 
     @GetMapping("/profile")
     public ApiResponse<ProfileResponseDto> getMyProfile(
-            @RequestHeader(value = "Authorization", required = false) String authorization
+            @RequestHeader(value = "Authorization", required = false) String authorization, HttpServletRequest request
     ) {
+        // 모든 헤더 출력
+        Enumeration<String> headerNames = request.getHeaderNames();
+        while (headerNames.hasMoreElements()) {
+            String name = headerNames.nextElement();
+            log.info("Header: {} = {}", name, request.getHeader(name));
+        }
+        log.info("Authorization value: {}", authorization);
+        log.info("===========================");
+
         String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.getMyProfile(loginId)
