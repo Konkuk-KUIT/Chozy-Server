@@ -11,7 +11,8 @@
 - [Fix]: 오류 수정
 - [Refactor]: 기능 변화 없는 코드 구조 개선
 - [Test]: 테스트 코드 관련 
-- [Docs]: 문서 수정 (readme, 주석 등) 
+- [Docs]: 문서 수정 (readme, 주석 등)
+- [Log]: 로그 관련 
 
 
 ### Branch Convention
