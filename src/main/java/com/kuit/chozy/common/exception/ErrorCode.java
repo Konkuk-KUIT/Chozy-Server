@@ -21,6 +21,7 @@ public enum ErrorCode {
     FOLLOW_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN,4032, "해당 팔로우 요청을 처리할 권한이 없습니다."),
 
     // 404
+    USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4040, "사용자를 찾을 수 없습니다."),
     TARGET_USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4041, "대상 사용자를 찾을 수 없습니다."),
     NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
     FOLLOW_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,4042, "팔로우 요청을 찾을 수 없습니다."),
