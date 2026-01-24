@@ -18,14 +18,19 @@ public class ProfileController {
 
     private final ProfileService profileService;
 
-    @GetMapping("/profile")
-    public ApiResponse<ProfileResponseDto> getMyProfile(
-            // TODO: 로그인 기능 생기면 JWT 토큰에서 loginId 추출
-            @RequestHeader(value = "X-LOGIN-ID", required = false) String loginId
-    ) {
-        if (loginId == null || loginId.isBlank()) {
+    // TODO: JWT token에서 loginId 추출
+    private String extractLoginId(String authorization) {
+        if (authorization == null || authorization.isBlank()) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
+        return authorization;
+    }
+
+    @GetMapping("/profile")
+    public ApiResponse<ProfileResponseDto> getMyProfile(
+            @RequestHeader(value = "Authorization", required = false) String authorization
+    ) {
+        String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.getMyProfile(loginId)
         );
@@ -33,13 +38,10 @@ public class ProfileController {
 
     @PatchMapping("/profile")
     public ApiResponse<ProfileResponseDto> updateMyProfile(
-            // TODO: 로그인 기능 생기면 JWT 토큰에서 loginId 추출
-            @RequestHeader(value = "X-LOGIN-ID", required = false) String loginId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody ProfileUpdateDto request
     ) {
-        if (loginId == null || loginId.isBlank()) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
+        String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.updateMyProfile(loginId, request)
         );
@@ -47,14 +49,11 @@ public class ProfileController {
 
     @GetMapping("/reviews")
     public ApiResponse<ReviewListResponse> getMyReviews(
-            // TODO: 로그인 기능 생기면 JWT 토큰에서 loginId 추출
-            @RequestHeader(value = "X-LOGIN-ID", required = false) String loginId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        if (loginId == null || loginId.isBlank()) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
+        String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.getMyReviews(loginId, page, size)
         );
@@ -62,15 +61,12 @@ public class ProfileController {
 
     @GetMapping("/reviews/searches")
     public ApiResponse<ReviewListResponse> searchMyReviews(
-            // TODO: 로그인 기능 생기면 JWT 토큰에서 loginId 추출
-            @RequestHeader(value = "X-LOGIN-ID", required = false) String loginId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        if (loginId == null || loginId.isBlank()) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
+        String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.searchMyReviews(loginId, keyword, page, size)
         );
@@ -78,14 +74,11 @@ public class ProfileController {
 
     @GetMapping("/bookmarks")
     public ApiResponse<BookmarkListResponse> getMyBookmarks(
-            // TODO: 로그인 기능 생기면 JWT 토큰에서 loginId 추출
-            @RequestHeader(value = "X-LOGIN-ID", required = false) String loginId,
+            @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        if (loginId == null || loginId.isBlank()) {
-            throw new ApiException(ErrorCode.UNAUTHORIZED);
-        }
+        String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.getMyBookmarks(loginId, page, size)
         );
