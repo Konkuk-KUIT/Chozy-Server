@@ -35,18 +35,6 @@ public class ProfileController {
     public ApiResponse<ProfileResponseDto> getMyProfile(
             @RequestHeader(value = "Authorization", required = false) String authorization, HttpServletRequest request
     ) {
-        log.info("profile controller");
-        log.error("Authorization: {}", authorization);
-
-        // 모든 헤더 출력
-        Enumeration<String> headerNames = request.getHeaderNames();
-        while (headerNames.hasMoreElements()) {
-            String name = headerNames.nextElement();
-            log.info("Header: {} = {}", name, request.getHeader(name));
-        }
-        log.info("Authorization value: {}", authorization);
-        log.info("===========================");
-
         String loginId = extractLoginId(authorization);
         return ApiResponse.success(
                 profileService.getMyProfile(loginId)
