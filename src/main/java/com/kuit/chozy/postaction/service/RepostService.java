@@ -51,6 +51,29 @@ public class RepostService {
         return "리포스트에 성공하였습니다.";
     }
 
+    @Transactional
+    public String cancelRepost(Long userId, Long feedId) {
+
+        if (userId == null || userId <= 0) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (feedId == null || feedId <= 0) {
+            throw new ApiException(ErrorCode.INVALID_REPOST_REQUEST);
+        }
+
+        PostAction repost = postActionRepository.findByPostIdAndUserIdAndTypeAndStatusNot(
+                feedId,
+                userId,
+                PostActionType.REPOST,
+                PostActionStatus.DELETED
+        ).orElseThrow(() -> new ApiException(ErrorCode.REPOST_NOT_FOUND));
+
+        repost.delete();
+
+        return "리포스트 취소에 성공하였습니다.";
+    }
+
     private void validateRequest(Long userId, RepostCreateRequest request) {
 
         if (userId == null || userId <= 0) {

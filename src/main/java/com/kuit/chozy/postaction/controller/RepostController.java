@@ -24,4 +24,14 @@ public class RepostController {
         String result = repostService.repost(meId, request);
         return ApiResponse.success(result);
     }
+
+    @DeleteMapping("/{feedId}")
+    public ApiResponse<String> cancel(@PathVariable Long feedId) {
+
+        // TODO: accessToken 기반으로 meId 추출
+        Long meId = 1L;
+
+        String result = repostService.cancelRepost(meId, feedId);
+        return ApiResponse.success(result);
+    }
 }

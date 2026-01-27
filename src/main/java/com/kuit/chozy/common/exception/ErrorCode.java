@@ -30,6 +30,7 @@ public enum ErrorCode {
     NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
     FOLLOW_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,4042, "팔로우 요청을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, 4043, "리뷰를 찾을 수 없습니다."),
+    REPOST_NOT_FOUND(org.springframework.http.HttpStatus.NOT_FOUND, 4044, "리포스트를 찾을 수 없습니다."),
 
     // 409
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),

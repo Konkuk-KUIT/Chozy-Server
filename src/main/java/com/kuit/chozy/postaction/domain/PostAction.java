@@ -101,4 +101,8 @@ public class PostAction {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void delete() {
+        this.status = PostActionStatus.DELETED;
+    }
 }
