@@ -14,6 +14,7 @@ public enum ErrorCode {
     INVALID_REQUEST_VALUE(HttpStatus.BAD_REQUEST,4001, "요청 값이 올바르지 않습니다."),
     INVALID_REVIEW_REQUEST(HttpStatus.BAD_REQUEST, 4010, "리뷰 요청 값이 올바르지 않습니다."),
     INVALID_REVIEW_UPDATE_REQUEST(HttpStatus.BAD_REQUEST, 4011, "리뷰 수정 요청 값이 올바르지 않습니다."),
+    INVALID_REPOST_REQUEST(org.springframework.http.HttpStatus.BAD_REQUEST, 4013, "리포스트 요청 값이 올바르지 않습니다."),
 
     // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 4012, "인증이 필요합니다."),
@@ -38,6 +39,7 @@ public enum ErrorCode {
     FOLLOW_REQUEST_ALREADY_PROCESSED(HttpStatus.CONFLICT,4092, "이미 처리된 팔로우 요청입니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, 4099, "이미 해당 상품에 대한 리뷰가 존재합니다."),
     REVIEW_ALREADY_DELETED(HttpStatus.CONFLICT, 4091, "이미 삭제된 리뷰입니다."),
+    REPOST_ALREADY_EXISTS(org.springframework.http.HttpStatus.CONFLICT, 4093, "이미 리포스트한 게시글입니다."),
 
     // 500
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 5000, "서버 내부 오류가 발생했습니다.");
