@@ -4,6 +4,7 @@ import com.kuit.chozy.common.exception.ApiException;
 import com.kuit.chozy.common.exception.ErrorCode;
 import com.kuit.chozy.post.domain.Post;
 import com.kuit.chozy.post.dto.PostCreateRequest;
+import com.kuit.chozy.post.dto.PostUpdateRequest;
 import com.kuit.chozy.post.repository.PostRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,18 +26,44 @@ public class PostService {
 
         validateCreateRequest(userId, request);
 
-        List<String> imageUrls = mapToImageUrls(request.getImg());
+        List<String> imageUrls = mapToImageKeys(request.getImg());
 
         Post post = Post.builder()
                 .userId(userId)
-                .content(request.getContent().trim())
-                .tag(normalizeTag(request.getTag()))
+                .content(normalizeContent(request.getContent()))
+                .hashTags(normalizeHashTags(request.getHashTags()))
                 .imageUrls(imageUrls)
                 .build();
 
         postRepository.save(post);
 
         return "게시글을 성공적으로 게시했어요.";
+    }
+
+    @Transactional
+    public String updatePost(Long userId, Long postId, PostUpdateRequest request) {
+
+        validateUpdateRequest(userId, postId, request);
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REQUEST_VALUE));
+
+        if (!post.getUserId().equals(userId)) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        List<String> imageUrls = null;
+        if (request.getImg() != null) {
+            imageUrls = mapToImageKeys(request.getImg());
+        }
+
+        post.update(
+                request.getContent() == null ? null : normalizeContent(request.getContent()),
+                request.getHashTags() == null ? null : normalizeHashTags(request.getHashTags()),
+                imageUrls
+        );
+
+        return "게시글을 성공적으로 수정했어요.";
     }
 
     private void validateCreateRequest(Long userId, PostCreateRequest request) {
@@ -57,53 +84,112 @@ public class PostService {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
 
-        if (request.getTag() == null) {
+        if (request.getHashTags() == null) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
 
-        if (request.getTag().length() > 1000) {
+        String hashTags = normalizeHashTags(request.getHashTags());
+
+        if (!isValidHashtagFormat(hashTags)) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
 
-        List<PostCreateRequest.ImageMeta> img = request.getImg();
-        if (img != null) {
-            if (img.size() > 10) {
+        if (hashTags.length() > 1000) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        validateImages(request.getImg());
+    }
+
+    private void validateUpdateRequest(Long userId, Long postId, PostUpdateRequest request) {
+
+        if (userId == null || userId <= 0) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+
+        if (postId == null || postId <= 0) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        if (request == null) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        if (request.getContent() != null) {
+            String content = request.getContent().trim();
+            if (content.isEmpty() || content.length() > 5000) {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
+        }
+
+        if (request.getHashTags() != null) {
+            String hashTags = normalizeHashTags(request.getHashTags());
+            if (!isValidHashtagFormat(hashTags) || hashTags.length() > 1000) {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
+        }
+
+        validateImages(request.getImg());
+    }
+
+    private void validateImages(List<? extends Object> img) {
+        if (img == null) {
+            return;
+        }
+
+        if (img.size() > 10) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        for (Object obj : img) {
+            if (obj == null) {
                 throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
             }
 
-            for (PostCreateRequest.ImageMeta meta : img) {
-                if (meta == null) {
-                    throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-                }
+            String fileName;
+            String contentType;
 
-                if (meta.getFileName() == null || meta.getFileName().trim().isEmpty()) {
-                    throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-                }
+            if (obj instanceof PostCreateRequest.ImageMeta meta) {
+                fileName = meta.getFileName();
+                contentType = meta.getContentType();
+            } else if (obj instanceof PostUpdateRequest.ImageMeta meta) {
+                fileName = meta.getFileName();
+                contentType = meta.getContentType();
+            } else {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
 
-                if (meta.getFileName().length() > 255) {
-                    throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-                }
+            if (fileName == null || fileName.trim().isEmpty() || fileName.length() > 255) {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
 
-                if (meta.getContentType() == null || meta.getContentType().trim().isEmpty()) {
-                    throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-                }
+            if (contentType == null || contentType.trim().isEmpty()) {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
 
-                if (!isAllowedImageContentType(meta.getContentType().trim())) {
-                    throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-                }
+            if (!isAllowedImageContentType(contentType.trim())) {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
             }
         }
     }
 
-    private List<String> mapToImageUrls(List<PostCreateRequest.ImageMeta> img) {
+    private List<String> mapToImageKeys(List<? extends Object> img) {
         if (img == null || img.isEmpty()) {
             return new ArrayList<>();
         }
 
         List<String> result = new ArrayList<>();
-        for (PostCreateRequest.ImageMeta meta : img) {
-            result.add(meta.getFileName().trim());
+
+        for (Object obj : img) {
+            if (obj instanceof PostCreateRequest.ImageMeta meta) {
+                result.add(meta.getFileName().trim());
+            } else if (obj instanceof PostUpdateRequest.ImageMeta meta) {
+                result.add(meta.getFileName().trim());
+            } else {
+                throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+            }
         }
+
         return result;
     }
 
@@ -113,9 +199,33 @@ public class PostService {
                 || "image/webp".equals(contentType);
     }
 
-    private String normalizeTag(String tag) {
-        // 입력 그대로 저장할지, 공백 정리만 할지 정책 선택
-        // 지금은 양 끝 공백만 정리해서 저장
-        return tag.trim();
+    private String normalizeContent(String content) {
+        return content.trim();
+    }
+
+    private String normalizeHashTags(String hashTags) {
+        return hashTags.trim().replaceAll("\\s+", " ");
+    }
+
+    private boolean isValidHashtagFormat(String hashTags) {
+        if (hashTags.isEmpty()) {
+            return false;
+        }
+
+        String[] tokens = hashTags.split(" ");
+
+        for (String token : tokens) {
+            if (token.isBlank()) {
+                continue;
+            }
+            if (!token.startsWith("#")) {
+                return false;
+            }
+            if (token.length() == 1) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

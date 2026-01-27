@@ -2,13 +2,13 @@ package com.kuit.chozy.post.dto;
 
 import java.util.List;
 
-public class PostCreateRequest {
+public class PostUpdateRequest {
 
     private String content;
     private String hashTags;
     private List<ImageMeta> img;
 
-    public PostCreateRequest() {
+    public PostUpdateRequest() {
     }
 
     public String getContent() {
