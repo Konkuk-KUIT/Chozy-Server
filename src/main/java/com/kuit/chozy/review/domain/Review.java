@@ -106,4 +106,28 @@ public class Review {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+    public void validateUpdatable(Long userId) {
+        if (userId == null || userId <= 0) {
+            throw new IllegalStateException("UNAUTHORIZED");
+        }
+        if (!this.userId.equals(userId)) {
+            throw new IllegalStateException("FORBIDDEN");
+        }
+        if (this.status == ReviewStatus.DELETED) {
+            throw new IllegalStateException("DELETED");
+        }
+    }
+
+    public void update(String sourceLink, BigDecimal rating, String content) {
+        if (sourceLink != null) {
+            this.sourceLink = sourceLink;
+        }
+        if (rating != null) {
+            this.rating = rating;
+        }
+        if (content != null) {
+            this.content = content;
+        }
+    }
 }
