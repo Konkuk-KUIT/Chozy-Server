@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(
-        name = "trending_count",
+        name = "home_trending_count",
         indexes = {
                 @Index(name = "idx_trending_keyword", columnList = "keyword")
         }
