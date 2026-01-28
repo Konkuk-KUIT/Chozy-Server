@@ -10,4 +10,16 @@ public class HealthController {
     public String health() {
         return "Chozy server is running";
     }
+
+    @GetMapping("/fast")
+    public String fast() {
+        return "fast";
+    }
+
+    @GetMapping("/slow")
+    public String slow() throws InterruptedException {
+        Thread.sleep(1200); // 1.2초
+        return "slow";
+    }
+
 }
