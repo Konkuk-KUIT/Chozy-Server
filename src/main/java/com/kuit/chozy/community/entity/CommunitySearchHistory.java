@@ -1,9 +1,10 @@
-package com.kuit.chozy.home.entity;
+package com.kuit.chozy.community.entity;
 
+import com.kuit.chozy.home.entity.SearchStatus;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.AccessLevel;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -13,13 +14,13 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(
-        name = "home_search_histories",
+        name = "community_search_histories",
         indexes = {
                 @Index(name = "idx_search_histories_user", columnList = "user_id"),
                 @Index(name = "idx_search_histories_keyword", columnList = "keyword")
         }
 )
-public class SearchHistory {
+public class CommunitySearchHistory {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -54,8 +55,8 @@ public class SearchHistory {
     private LocalDateTime updatedAt;
 
     /* ===== 생성 메서드 ===== */
-    public static SearchHistory create(Long userId, String keyword) {
-        SearchHistory history = new SearchHistory();
+    public static CommunitySearchHistory create(Long userId, String keyword) {
+        CommunitySearchHistory history = new CommunitySearchHistory();
         history.userId = userId;
         history.keyword = keyword;
         history.countInPeriod = 1;
