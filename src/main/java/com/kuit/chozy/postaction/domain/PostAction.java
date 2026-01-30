@@ -53,7 +53,13 @@ public class PostAction {
     protected PostAction() {
     }
 
-    private PostAction(PostActionType type, String hashTags, String quoteText, Long postId, Long userId) {
+    private PostAction(
+            PostActionType type,
+            String hashTags,
+            String quoteText,
+            Long postId,
+            Long userId
+    ) {
         this.type = type;
         this.hashTags = hashTags;
         this.quoteText = quoteText;
@@ -62,47 +68,43 @@ public class PostAction {
         this.status = PostActionStatus.ACTIVE;
     }
 
-    public static PostAction retweet(Long postId, Long userId, String hashTagsJson) {
-        return new PostAction(PostActionType.REPOST, hashTagsJson, null, postId, userId);
+    public static PostAction repost(Long postId, Long userId, String hashTagsJson) {
+        return new PostAction(
+                PostActionType.REPOST,
+                hashTagsJson,
+                null,
+                postId,
+                userId
+        );
     }
 
-    public Long getId() {
-        return id;
-    }
-
-    public PostActionType getType() {
-        return type;
-    }
-
-    public String getHashTags() {
-        return hashTags;
-    }
-
-    public String getQuoteText() {
-        return quoteText;
-    }
-
-    public Long getPostId() {
-        return postId;
-    }
-
-    public Long getUserId() {
-        return userId;
-    }
-
-    public PostActionStatus getStatus() {
-        return status;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
+    public static PostAction quote(
+            Long postId,
+            Long userId,
+            String quoteText,
+            String hashTagsJson
+    ) {
+        return new PostAction(
+                PostActionType.QUOTE,
+                hashTagsJson,
+                quoteText,
+                postId,
+                userId
+        );
     }
 
     public void delete() {
         this.status = PostActionStatus.DELETED;
     }
+
+    // getters
+    public Long getId() { return id; }
+    public PostActionType getType() { return type; }
+    public String getHashTags() { return hashTags; }
+    public String getQuoteText() { return quoteText; }
+    public Long getPostId() { return postId; }
+    public Long getUserId() { return userId; }
+    public PostActionStatus getStatus() { return status; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 }

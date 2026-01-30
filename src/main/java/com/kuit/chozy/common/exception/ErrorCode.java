@@ -6,7 +6,7 @@ public enum ErrorCode {
 
     // 400
     SELF_FOLLOW_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4003, "자기 자신은 팔로우할 수 없습니다."),
-    INVALID_REQUEST(org.springframework.http.HttpStatus.BAD_REQUEST, 4001, "요청 값이 올바르지 않습니다."),
+    INVALID_REQUEST(HttpStatus.BAD_REQUEST, 4001, "요청 값이 올바르지 않습니다."),
     SELF_BLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4004, "자기 자신은 차단할 수 없습니다."),
     SELF_UNBLOCK_NOT_ALLOWED(HttpStatus.BAD_REQUEST, 4006, "자기 자신에 대한 차단은 해제할 수 없습니다."),
     ALREADY_BLOCKED(HttpStatus.BAD_REQUEST, 4005, "이미 차단한 사용자입니다."),
@@ -14,7 +14,8 @@ public enum ErrorCode {
     INVALID_REQUEST_VALUE(HttpStatus.BAD_REQUEST,4001, "요청 값이 올바르지 않습니다."),
     INVALID_REVIEW_REQUEST(HttpStatus.BAD_REQUEST, 4010, "리뷰 요청 값이 올바르지 않습니다."),
     INVALID_REVIEW_UPDATE_REQUEST(HttpStatus.BAD_REQUEST, 4011, "리뷰 수정 요청 값이 올바르지 않습니다."),
-    INVALID_REPOST_REQUEST(org.springframework.http.HttpStatus.BAD_REQUEST, 4013, "리포스트 요청 값이 올바르지 않습니다."),
+    INVALID_REPOST_REQUEST(HttpStatus.BAD_REQUEST, 4013, "리포스트 요청 값이 올바르지 않습니다."),
+    INVALID_QUOTE_REQUEST(HttpStatus.BAD_REQUEST, 4014, "인용 요청 값이 올바르지 않습니다."),
 
     // 401
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, 4012, "인증이 필요합니다."),
@@ -30,7 +31,7 @@ public enum ErrorCode {
     NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
     FOLLOW_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,4042, "팔로우 요청을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, 4043, "리뷰를 찾을 수 없습니다."),
-    REPOST_NOT_FOUND(org.springframework.http.HttpStatus.NOT_FOUND, 4044, "리포스트를 찾을 수 없습니다."),
+    REPOST_NOT_FOUND(HttpStatus.NOT_FOUND, 4044, "리포스트를 찾을 수 없습니다."),
 
     // 409
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),
@@ -40,7 +41,11 @@ public enum ErrorCode {
     FOLLOW_REQUEST_ALREADY_PROCESSED(HttpStatus.CONFLICT,4092, "이미 처리된 팔로우 요청입니다."),
     REVIEW_ALREADY_EXISTS(HttpStatus.CONFLICT, 4099, "이미 해당 상품에 대한 리뷰가 존재합니다."),
     REVIEW_ALREADY_DELETED(HttpStatus.CONFLICT, 4091, "이미 삭제된 리뷰입니다."),
-    REPOST_ALREADY_EXISTS(org.springframework.http.HttpStatus.CONFLICT, 4093, "이미 리포스트한 게시글입니다."),
+    REPOST_ALREADY_EXISTS(HttpStatus.CONFLICT, 4093, "이미 리포스트한 게시글입니다."),
+    QUOTE_ALREADY_EXISTS(HttpStatus.CONFLICT, 4094, "이미 인용한 게시글입니다."),
+    CANNOT_REPOST_WHEN_QUOTED(HttpStatus.CONFLICT, 40910, "인용한 게시글은 리포스트할 수 없습니다."),
+    CANNOT_QUOTE_WHEN_REPOSTED(HttpStatus.CONFLICT, 40911, "리포스트한 게시글은 인용할 수 없습니다."),
+
 
     // 500
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 5000, "서버 내부 오류가 발생했습니다.");

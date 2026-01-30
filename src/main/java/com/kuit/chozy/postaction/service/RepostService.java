@@ -40,7 +40,7 @@ public class RepostService {
 
         String hashTagsJson = toJsonString(request.getHashTags());
 
-        PostAction action = PostAction.retweet(postId, userId, hashTagsJson);
+        PostAction action = PostAction.repost(postId, userId, hashTagsJson);
 
         try {
             postActionRepository.save(action);
