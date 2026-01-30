@@ -1,6 +1,6 @@
-package com.kuit.chozy.common.exception;
+package com.kuit.chozy.global.common.exception;
 
-import com.kuit.chozy.common.response.ErrorResponse;
+import com.kuit.chozy.global.common.response.ErrorResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;

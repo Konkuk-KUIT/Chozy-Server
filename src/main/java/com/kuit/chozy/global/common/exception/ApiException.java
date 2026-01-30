@@ -1,4 +1,4 @@
-package com.kuit.chozy.common.exception;
+package com.kuit.chozy.global.common.exception;
 
 public class ApiException extends RuntimeException {
 

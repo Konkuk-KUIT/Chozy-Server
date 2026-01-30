@@ -1,7 +1,7 @@
 package com.kuit.chozy.userrelation.service;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.userrelation.domain.Follow;
 import com.kuit.chozy.userrelation.domain.FollowRequest;
 import com.kuit.chozy.userrelation.dto.request.FollowRequestProcessRequest;

@@ -1,6 +1,6 @@
 package com.kuit.chozy.userrelation.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendListResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendSetResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendUnsetResponse;
