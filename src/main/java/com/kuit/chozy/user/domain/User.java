@@ -33,7 +33,7 @@ public class User {
     private String email;
 
     // =============== Profile ===============
-    @Column(nullable = false)
+    @Column
     private String name;
 
     @Column(nullable = false, length = 50)
@@ -64,16 +64,16 @@ public class User {
     private String backgroundImageUrl;
 
     // =============== Privacy ===============
-    @Column(name = "is_account_public", nullable = false)
+    @Column(name = "is_account_public")
     private boolean isAccountPublic;
 
-    @Column(name = "is_birth_public", nullable = false)
+    @Column(name = "is_birth_public")
     private boolean isBirthPublic;
 
-    @Column(name = "is_height_public", nullable = false)
+    @Column(name = "is_height_public")
     private boolean isHeightPublic;
 
-    @Column(name = "is_weight_public", nullable = false)
+    @Column(name = "is_weight_public")
     private boolean isWeightPublic;
 
     // =============== Status ===============
@@ -95,5 +95,9 @@ public class User {
     // 팔로우에서 쓸 활성 여부 헬퍼
     public boolean isActive() {
         return status == UserStatus.ACTIVE;
+    }
+
+    public void delete() {
+        this.status = UserStatus.DELETED;
     }
 }
