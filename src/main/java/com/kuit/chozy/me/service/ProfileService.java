@@ -1,7 +1,7 @@
 package com.kuit.chozy.me.service;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.bookmark.domain.Bookmark;
 import com.kuit.chozy.bookmark.repository.BookmarkRepository;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;

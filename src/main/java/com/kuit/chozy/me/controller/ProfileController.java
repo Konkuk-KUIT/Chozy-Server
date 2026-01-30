@@ -1,8 +1,8 @@
 package com.kuit.chozy.me.controller;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.me.dto.response.BookmarkListResponse;
 import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
@@ -12,8 +12,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Enumeration;
 
 @Slf4j
 @RestController

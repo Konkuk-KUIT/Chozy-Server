@@ -1,6 +1,7 @@
 package com.kuit.chozy.community.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.auth.UserId;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.community.dto.request.SaveProfileRequest;
 import com.kuit.chozy.community.dto.response.RecentViewedProfileResponse;
 import com.kuit.chozy.community.dto.response.UserLoginIdRecommendResponse;
@@ -23,8 +24,7 @@ public class CommunitySearchController {
     // 최근 검색어 조회
     @GetMapping("/recent")
     public ApiResponse<RecentSearchKeywordResponse> getRecentSearchKeyword(
-            //TODO: 로그인 기능 생기면 변경
-            @RequestHeader("X-USER-ID") Long userId
+            @UserId Long userId
     ){
         return ApiResponse.success(communitySearchService.getRecentSearchKeyword(userId));
     }
@@ -40,7 +40,7 @@ public class CommunitySearchController {
     // 검색어 저장
     @PostMapping
     public ApiResponse<Void> saveSearchKeyword(
-            @RequestHeader("X-USER-ID") Long userId,
+            @UserId Long userId,
             @RequestBody SaveSearchKeywordRequest request
     ){
         communitySearchService.saveSearchKeyword(userId, request.keyword());
@@ -58,7 +58,7 @@ public class CommunitySearchController {
     // 프로필 방문 기록 저장
     @PostMapping("/profile")
     public ApiResponse<Void> saveProfile(
-            @RequestHeader("X-USER-ID") Long userId,
+            @UserId Long userId,
             @RequestBody SaveProfileRequest request
     ){
         communitySearchService.saveProfile(userId, request.profileId());
@@ -68,7 +68,7 @@ public class CommunitySearchController {
     // 최근 프로필 조회 기능
     @GetMapping("/profile")
     public ApiResponse<List<RecentViewedProfileResponse>> getRecentProfiles(
-            @RequestHeader("X-USER-ID") Long userId
+            @UserId Long userId
     ){
         return ApiResponse.success(communitySearchService.getRecentProfiles(userId));
     }

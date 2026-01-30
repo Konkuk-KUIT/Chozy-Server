@@ -1,4 +1,4 @@
-package com.kuit.chozy.common.response;
+package com.kuit.chozy.global.common.response;
 
 import java.time.LocalDateTime;
 
