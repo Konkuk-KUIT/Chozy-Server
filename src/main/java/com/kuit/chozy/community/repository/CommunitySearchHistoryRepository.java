@@ -1,7 +1,6 @@
 package com.kuit.chozy.community.repository;
 
-import com.kuit.chozy.community.entity.CommunitySearchHistory;
-import com.kuit.chozy.home.entity.SearchHistory;
+import com.kuit.chozy.community.domain.CommunitySearchHistory;
 import com.kuit.chozy.home.entity.SearchStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
