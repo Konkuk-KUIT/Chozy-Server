@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
     
-    @Query("SELECT p FROM Post p WHERE p.userId = :userId AND p.content LIKE %:keyword% ORDER BY p.createdAt DESC")
+    @Query("SELECT p FROM Post p WHERE p.userId = :userId AND p.content LIKE CONCAT('%', :keyword, '%') ORDER BY p.createdAt DESC")
     Page<Post> findByUserIdAndContentContainingOrderByCreatedAtDesc(
             @Param("userId") Long userId,
             @Param("keyword") String keyword,

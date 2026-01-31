@@ -1,4 +1,4 @@
-package com.kuit.chozy.community.entity;
+package com.kuit.chozy.community.domain;
 
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.domain.UserStatus;

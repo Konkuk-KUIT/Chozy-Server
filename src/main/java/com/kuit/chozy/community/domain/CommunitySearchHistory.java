@@ -1,4 +1,4 @@
-package com.kuit.chozy.community.entity;
+package com.kuit.chozy.community.domain;
 
 import com.kuit.chozy.home.entity.SearchStatus;
 import jakarta.persistence.*;

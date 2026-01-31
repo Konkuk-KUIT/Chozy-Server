@@ -2,8 +2,8 @@ package com.kuit.chozy.community.service;
 
 import com.kuit.chozy.community.dto.response.RecentViewedProfileResponse;
 import com.kuit.chozy.community.dto.response.UserLoginIdRecommendResponse;
-import com.kuit.chozy.community.entity.CommunitySearchHistory;
-import com.kuit.chozy.community.entity.RecentViewedProfile;
+import com.kuit.chozy.community.domain.CommunitySearchHistory;
+import com.kuit.chozy.community.domain.RecentViewedProfile;
 import com.kuit.chozy.community.repository.CommunitySearchHistoryRepository;
 import com.kuit.chozy.community.repository.CommunityUserRepository;
 import com.kuit.chozy.community.repository.RecentViewedProfileRepository;
