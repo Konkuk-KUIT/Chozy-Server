@@ -12,5 +12,7 @@ public interface FeedReactionRepository extends JpaRepository<FeedReaction, Long
 
     List<FeedReaction> findByUserIdAndFeedIdIn(Long userId, List<Long> feedIds);
 
+    List<FeedReaction> findByFeedId(Long feedId);
+
     boolean existsByUserIdAndFeedId(Long userId, Long feedId);
 }

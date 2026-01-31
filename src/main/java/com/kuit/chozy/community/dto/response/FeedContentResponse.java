@@ -24,4 +24,7 @@ public class FeedContentResponse {
 
     // REVIEW with quote (인용)
     private FeedQuoteContentResponse quoteContent;
+
+    // 해시태그 (상세 등)
+    private String hashTags;
 }

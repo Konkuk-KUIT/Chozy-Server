@@ -20,10 +20,13 @@ public enum ErrorCode {
 
     // 403
     DEACTIVATED_ACCOUNT(HttpStatus.FORBIDDEN, 4030, "비활성화된 계정입니다."),
+    FEED_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, 4033, "본인 게시글만 삭제할 수 있습니다."),
     FOLLOW_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN,4032, "해당 팔로우 요청을 처리할 권한이 없습니다."),
 
     // 404
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4040, "사용자를 찾을 수 없습니다."),
+    FEED_NOT_FOUND(HttpStatus.NOT_FOUND, 4043, "피드를 찾을 수 없습니다."),
+    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, 4044, "댓글을 찾을 수 없습니다."),
     TARGET_USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4041, "대상 사용자를 찾을 수 없습니다."),
     NOT_BLOCKED(HttpStatus.NOT_FOUND, 4042, "차단 상태가 아닙니다."),
     FOLLOW_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND,4042, "팔로우 요청을 찾을 수 없습니다."),

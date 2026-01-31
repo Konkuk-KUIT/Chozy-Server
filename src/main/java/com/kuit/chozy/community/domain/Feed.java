@@ -61,6 +61,13 @@ public class Feed {
     @Column(name = "quote_feed_id")
     private Long quoteFeedId;
 
+    @Column(name = "hash_tags", length = 1000)
+    private String hashTags;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private Long views = 0L;
+
     @Column(name = "comment_count", nullable = false)
     @Builder.Default
     private Long commentCount = 0L;

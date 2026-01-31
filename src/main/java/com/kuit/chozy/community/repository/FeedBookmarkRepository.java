@@ -8,4 +8,6 @@ import java.util.List;
 public interface FeedBookmarkRepository extends JpaRepository<FeedBookmark, Long> {
 
     List<FeedBookmark> findByUserIdAndFeedIdIn(Long userId, List<Long> feedIds);
+
+    List<FeedBookmark> findByFeedId(Long feedId);
 }
