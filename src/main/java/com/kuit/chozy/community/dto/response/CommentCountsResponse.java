@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class FeedCountsResponse {
-    private Long views;       // 상세 조회 시에만 사용 (목록에서는 null 가능)
+public class CommentCountsResponse {
     private Long commentCount;
     private Long likeCount;
     private Long dislikeCount;
