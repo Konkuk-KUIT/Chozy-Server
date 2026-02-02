@@ -1,7 +1,7 @@
 package com.kuit.chozy.post.service;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.post.domain.Post;
 import com.kuit.chozy.post.dto.PostCreateRequest;
 import com.kuit.chozy.post.dto.PostUpdateRequest;

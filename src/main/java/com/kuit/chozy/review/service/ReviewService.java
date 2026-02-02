@@ -1,7 +1,7 @@
 package com.kuit.chozy.review.service;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.review.domain.Review;
 import com.kuit.chozy.review.domain.ReviewStatus;
 import com.kuit.chozy.review.dto.ReviewCreateRequest;

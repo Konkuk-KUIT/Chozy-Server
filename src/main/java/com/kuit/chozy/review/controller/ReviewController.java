@@ -1,6 +1,6 @@
 package com.kuit.chozy.review.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.review.dto.ReviewCreateRequest;
 import com.kuit.chozy.review.service.ReviewService;
 import org.springframework.web.bind.annotation.*;

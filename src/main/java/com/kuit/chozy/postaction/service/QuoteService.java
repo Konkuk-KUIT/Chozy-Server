@@ -28,7 +28,7 @@ public class QuoteService {
         Long postId = validated.postId;
         String content = validated.content;
         String hashTags = validated.hashTags;
-        
+
         boolean repostExists = postActionRepository.existsByPostIdAndUserIdAndTypeAndStatusNot(
                 postId,
                 userId,
