@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(
-        name = "search_histories",
+        name = "home_search_histories",
         indexes = {
                 @Index(name = "idx_search_histories_user", columnList = "user_id"),
                 @Index(name = "idx_search_histories_keyword", columnList = "keyword")

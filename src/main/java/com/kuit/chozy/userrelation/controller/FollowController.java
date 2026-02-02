@@ -1,6 +1,6 @@
 package com.kuit.chozy.userrelation.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowActionResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowerListResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowingListResponse;

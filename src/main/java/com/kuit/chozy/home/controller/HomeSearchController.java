@@ -1,6 +1,6 @@
 package com.kuit.chozy.home.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.home.dto.request.SaveSearchKeywordRequest;
 import com.kuit.chozy.home.dto.response.PopularSearchKeywordResponse;
 import com.kuit.chozy.home.dto.response.RecentSearchKeywordResponse;
