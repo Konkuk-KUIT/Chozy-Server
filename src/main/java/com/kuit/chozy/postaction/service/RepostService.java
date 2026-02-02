@@ -36,7 +36,6 @@ public class RepostService {
         );
 
         if (quoteExists) {
-            // TODO: 바뀐 에러코드로 교체
             throw new ApiException(ErrorCode.CANNOT_REPOST_WHEN_QUOTED);
         }
 

@@ -1,6 +1,6 @@
 package com.kuit.chozy.post.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.post.dto.PostCreateRequest;
 import com.kuit.chozy.post.dto.PostUpdateRequest;
 import com.kuit.chozy.post.service.PostService;
