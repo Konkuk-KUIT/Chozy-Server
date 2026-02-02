@@ -1,6 +1,6 @@
 package com.kuit.chozy.postaction.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.postaction.dto.RepostCreateRequest;
 import com.kuit.chozy.postaction.service.RepostService;
 import org.springframework.web.bind.annotation.*;
