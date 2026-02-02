@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -24,6 +25,10 @@ public class Post {
 
     @Column(nullable = false, length = 5000)
     private String content;
+
+    @Column(name = "hash_tags", nullable = false, length = 1000)
+    @Builder.Default
+    private String hashTags = "";
 
     @ElementCollection
     @CollectionTable(name = "post_images", joinColumns = @JoinColumn(name = "post_id"))
@@ -53,4 +58,19 @@ public class Post {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public void update(String content, String hashTags, List<String> imageUrls) {
+
+        if (content != null) {
+            this.content = content;
+        }
+
+        if (hashTags != null) {
+            this.hashTags = hashTags;
+        }
+
+        if (imageUrls != null) {
+            this.imageUrls = imageUrls;
+        }
+    }
 }
