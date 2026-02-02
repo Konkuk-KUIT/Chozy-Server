@@ -1,7 +1,7 @@
 package com.kuit.chozy.postaction.service;
 
-import com.kuit.chozy.common.exception.ApiException;
-import com.kuit.chozy.common.exception.ErrorCode;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.postaction.domain.PostAction;
 import com.kuit.chozy.postaction.domain.PostActionStatus;
 import com.kuit.chozy.postaction.domain.PostActionType;
@@ -23,24 +23,39 @@ public class QuoteService {
     @Transactional
     public String quote(Long userId, QuoteCreateRequest request) {
 
-        validateRequest(userId, request);
+        ValidatedQuote validated = validateRequest(userId, request);
 
-        boolean exists = postActionRepository.existsByPostIdAndUserIdAndTypeAndStatusNot(
-                request.getFeedId(),
+        Long postId = validated.postId;
+        String content = validated.content;
+        String hashTags = validated.hashTags;
+        
+        boolean repostExists = postActionRepository.existsByPostIdAndUserIdAndTypeAndStatusNot(
+                postId,
+                userId,
+                PostActionType.REPOST,
+                PostActionStatus.DELETED
+        );
+
+        if (repostExists) {
+            throw new ApiException(ErrorCode.CANNOT_QUOTE_WHEN_REPOSTED);
+        }
+
+        boolean quoteExists = postActionRepository.existsByPostIdAndUserIdAndTypeAndStatusNot(
+                postId,
                 userId,
                 PostActionType.QUOTE,
                 PostActionStatus.DELETED
         );
 
-        if (exists) {
+        if (quoteExists) {
             throw new ApiException(ErrorCode.QUOTE_ALREADY_EXISTS);
         }
 
         PostAction action = PostAction.quote(
-                request.getFeedId(),
+                postId,
                 userId,
-                normalizeContent(request.getContent()),
-                toJsonString(request.getHashTags())
+                content,
+                toJsonString(hashTags)
         );
 
         try {
@@ -52,7 +67,7 @@ public class QuoteService {
         return "인용에 성공하였습니다.";
     }
 
-    private void validateRequest(Long userId, QuoteCreateRequest request) {
+    private ValidatedQuote validateRequest(Long userId, QuoteCreateRequest request) {
 
         if (userId == null || userId <= 0) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
@@ -70,7 +85,9 @@ public class QuoteService {
             throw new ApiException(ErrorCode.INVALID_QUOTE_REQUEST);
         }
 
-        if (request.getContent().length() > 500) {
+        String normalizedContent = normalizeContent(request.getContent());
+
+        if (normalizedContent.length() > 500) {
             throw new ApiException(ErrorCode.INVALID_QUOTE_REQUEST);
         }
 
@@ -78,11 +95,13 @@ public class QuoteService {
             throw new ApiException(ErrorCode.INVALID_QUOTE_REQUEST);
         }
 
-        String hashTags = normalizeHashTags(request.getHashTags());
+        String normalizedHashTags = normalizeHashTags(request.getHashTags());
 
-        if (!isValidHashtagFormat(hashTags) || hashTags.length() > 1000) {
+        if (!isValidHashtagFormat(normalizedHashTags) || normalizedHashTags.length() > 1000) {
             throw new ApiException(ErrorCode.INVALID_QUOTE_REQUEST);
         }
+
+        return new ValidatedQuote(request.getFeedId(), normalizedContent, normalizedHashTags);
     }
 
     private String normalizeContent(String content) {
@@ -112,5 +131,17 @@ public class QuoteService {
                 .replace("\\", "\\\\")
                 .replace("\"", "\\\"");
         return "\"" + escaped + "\"";
+    }
+
+    private static class ValidatedQuote {
+        private final Long postId;
+        private final String content;
+        private final String hashTags;
+
+        private ValidatedQuote(Long postId, String content, String hashTags) {
+            this.postId = postId;
+            this.content = content;
+            this.hashTags = hashTags;
+        }
     }
 }

@@ -1,6 +1,6 @@
 package com.kuit.chozy.postaction.controller;
 
-import com.kuit.chozy.common.response.ApiResponse;
+import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.postaction.dto.QuoteCreateRequest;
 import com.kuit.chozy.postaction.service.QuoteService;
 import org.springframework.web.bind.annotation.*;
