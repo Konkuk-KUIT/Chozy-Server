@@ -45,19 +45,19 @@ public class FeedComment {
 
     @Column(name = "comment_count", nullable = false)
     @Builder.Default
-    private Long commentCount = 0L;
+    private Integer commentCount = 0;
 
     @Column(name = "like_count", nullable = false)
     @Builder.Default
-    private Long likeCount = 0L;
+    private Integer likeCount = 0;
 
     @Column(name = "dislike_count", nullable = false)
     @Builder.Default
-    private Long dislikeCount = 0L;
+    private Integer dislikeCount = 0;
 
     @Column(name = "quote_count", nullable = false)
     @Builder.Default
-    private Long quoteCount = 0L;
+    private Integer quoteCount = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

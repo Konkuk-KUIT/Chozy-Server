@@ -1,9 +1,6 @@
 package com.kuit.chozy.community.controller;
 
-import com.kuit.chozy.community.dto.request.CommentCreateRequest;
-import com.kuit.chozy.community.dto.request.CommentReactionRequest;
-import com.kuit.chozy.community.dto.request.FeedBookmarkRequest;
-import com.kuit.chozy.community.dto.request.FeedReactionRequest;
+import com.kuit.chozy.community.dto.request.*;
 import com.kuit.chozy.community.dto.response.CommentCreateResponse;
 import com.kuit.chozy.community.dto.response.FeedDetailResponse;
 import com.kuit.chozy.community.dto.response.FeedItemResponse;
@@ -15,8 +12,10 @@ import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @RestController
@@ -105,5 +104,134 @@ public class CommunityFeedController {
     ) {
         CommentCreateResponse result = communityFeedService.createComment(feedId, userId, request);
         return ApiResponse.success(result);
+    }
+
+    @PostMapping("/{feedId}/repost")
+    public ApiResponse<Long> repost(
+            @UserId Long userId,
+            @PathVariable Long feedId
+    ) {
+        Long id = communityFeedService.createRepost(userId, feedId);
+        return ApiResponse.success(id);
+    }
+
+    @DeleteMapping("/{feedId}/repost")
+    public ApiResponse<String> cancelRepost(
+            @UserId Long userId,
+            @PathVariable Long feedId
+    ) {
+        communityFeedService.cancelRepost(userId, feedId);
+        return ApiResponse.success("성공적으로 처리됐습니다.");
+    }
+
+    @PostMapping("/{feedId}/quote")
+    public ApiResponse<Long> quote(
+            @UserId Long userId,
+            @PathVariable Long feedId,
+            @RequestBody FeedQuoteCreateRequest request
+    ) {
+        Long id = communityFeedService.createQuote(userId, feedId, request.getText());
+        return ApiResponse.success(id);
+    }
+
+    @PostMapping("/post")
+    public ApiResponse<Long> createPostFeed(
+            @UserId Long userId,
+            @RequestBody FeedPostCreateRequest request
+    ) {
+        if (!StringUtils.hasText(request.getContent())) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+
+        List<String> imageUrls = Collections.emptyList();
+        if (request.getImg() != null && !request.getImg().isEmpty()) {
+            imageUrls = request.getImg().stream()
+                    .map(FeedPostCreateRequest.ImageMeta::getFileName)
+                    .toList();
+        }
+
+        Long id = communityFeedService.createPostFeed(
+                userId,
+                request.getContent(),
+                imageUrls,
+                request.getHashTags()
+        );
+        return ApiResponse.success(id);
+    }
+
+    @PostMapping("/review")
+    public ApiResponse<Long> createReviewFeed(
+            @UserId Long userId,
+            @RequestBody FeedReviewCreateRequest request
+    ) {
+        if (!StringUtils.hasText(request.getContent())) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+
+        Long id = communityFeedService.createReviewFeed(
+                userId,
+                request.getContent(),
+                request.getVendor(),
+                request.getRating(),
+                request.getProductUrl(),
+                Collections.emptyList(),
+                null
+        );
+        return ApiResponse.success(id);
+    }
+
+    @PatchMapping("/{feedId}/post")
+    public ApiResponse<String> updatePostFeed(
+            @UserId Long userId,
+            @PathVariable Long feedId,
+            @RequestBody FeedPostUpdateRequest request
+    ) {
+        if (!StringUtils.hasText(request.getContent())) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        List<String> imageUrls = Collections.emptyList();
+        if (request.getImg() != null && !request.getImg().isEmpty()) {
+            imageUrls = request.getImg().stream()
+                    .map(FeedPostUpdateRequest.ImageMeta::getFileName)
+                    .toList();
+        }
+
+        communityFeedService.updatePostFeed(
+                feedId,
+                userId,
+                request.getContent(),
+                request.getHashTags(),
+                imageUrls
+        );
+
+        return ApiResponse.success("수정 완료");
+    }
+
+    @PatchMapping("/{feedId}/review")
+    public ApiResponse<String> updateReviewFeed(
+            @UserId Long userId,
+            @PathVariable Long feedId,
+            @RequestBody FeedReviewUpdateRequest request
+    ) {
+        if (!StringUtils.hasText(request.getContent()) || !StringUtils.hasText(request.getVendor())) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        List<String> imageUrls = Collections.emptyList();
+        if (request.getImg() != null && !request.getImg().isEmpty()) {
+            imageUrls = request.getImg().stream()
+                    .map(FeedReviewUpdateRequest.ImageMeta::getFileName)
+                    .toList();
+        }
+
+        communityFeedService.updateReviewFeed(
+                feedId,
+                userId,
+                request.getContent(),
+                request.getVendor(),
+                request.getRating(),
+                request.getProductUrl(),
+                request.getHashTags(),
+                imageUrls
+        );
+
+        return ApiResponse.success("수정 완료");
     }
 }
