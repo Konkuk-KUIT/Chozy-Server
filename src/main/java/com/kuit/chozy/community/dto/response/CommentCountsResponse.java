@@ -10,8 +10,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentCountsResponse {
-    private Long commentCount;
-    private Long likeCount;
-    private Long dislikeCount;
-    private Long quoteCount;
+    private Integer commentCount;
+    private Integer likeCount;
+    private Integer dislikeCount;
+    private Integer quoteCount;
 }

@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -20,7 +21,7 @@ public class FeedContentResponse {
     private String vendor;
     private String productUrl;
     private String title;
-    private Float rating;
+    private BigDecimal rating;
 
     // REVIEW with quote (인용)
     private FeedQuoteContentResponse quoteContent;

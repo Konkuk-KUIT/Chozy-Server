@@ -1,14 +1,14 @@
-package com.kuit.chozy.post.dto;
+package com.kuit.chozy.community.dto.request;
 
 import java.util.List;
 
-public class PostCreateRequest {
+public class FeedPostUpdateRequest {
 
     private String content;
     private String hashTags;
     private List<ImageMeta> img;
 
-    public PostCreateRequest() {
+    public FeedPostUpdateRequest() {
     }
 
     public String getContent() {

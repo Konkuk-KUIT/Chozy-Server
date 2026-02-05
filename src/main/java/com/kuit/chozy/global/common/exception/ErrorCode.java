@@ -26,6 +26,7 @@ public enum ErrorCode {
     // 403
     DEACTIVATED_ACCOUNT(HttpStatus.FORBIDDEN, 4030, "비활성화된 계정입니다."),
     FEED_DELETE_FORBIDDEN(HttpStatus.FORBIDDEN, 4033, "본인 게시글만 삭제할 수 있습니다."),
+    FEED_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, 4035, "본인 게시글만 수정할 수 있습니다."),
     FOLLOW_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, 4032, "해당 팔로우 요청을 처리할 권한이 없습니다."),
     REVIEW_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, 4034, "리뷰 작성자만 수정할 수 있습니다."),
 
