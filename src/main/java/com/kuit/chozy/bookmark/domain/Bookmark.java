@@ -20,8 +20,8 @@ import java.time.LocalDateTime;
         name = "bookmarks",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uk_bookmarks_user_post",
-                        columnNames = {"user_id", "post_id"}
+                        name = "uk_bookmarks_user_feed",
+                        columnNames = {"user_id", "feed_id"}
                 )
         }
 )
@@ -38,8 +38,8 @@ public class Bookmark {
     @Column(name = "user_id", nullable = false)
     private Long userId;
 
-    @Column(name = "post_id", nullable = false)
-    private Long postId;
+    @Column(name = "feed_id", nullable = false)
+    private Long feedId;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

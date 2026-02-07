@@ -14,10 +14,10 @@ public class BookmarkItemResponse {
     private final String content;
     private final List<String> imageUrls;
     private final BookmarkAuthorResponse author;
-    private final Long likeCount;
-    private final Long dislikeCount;
-    private final Long commentCount;
-    private final Long quoteCount;
+    private final Integer likeCount;
+    private final Integer dislikeCount;
+    private final Integer commentCount;
+    private final Integer quoteCount;
 
     @JsonProperty("isBookmarked")
     private final boolean isBookmarked;

@@ -58,4 +58,30 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
 
 
     boolean existsByUserIdAndKindAndOriginalFeedId(Long userId, FeedKind kind, Long originalFeedId);
+
+    Page<Feed> findByUserIdAndContentTypeOrderByCreatedAtDesc(
+            Long userId,
+            FeedContentType contentType,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE f.userId = :userId
+      AND f.contentType = :contentType
+      AND (
+           LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :keyword, '%'))
+      )
+    ORDER BY f.createdAt DESC
+""")
+    Page<Feed> findByUserIdAndSearchOrderByCreatedAtDesc(
+            @Param("userId") Long userId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+
 }
