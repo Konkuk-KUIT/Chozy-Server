@@ -12,9 +12,9 @@ public class ReviewItemResponse {
     private final Long postId;
     private final String content;
     private final List<String> imageUrls;
-    private final Long likeCount;
-    private final Long dislikeCount;
-    private final Long commentCount;
-    private final Long quoteCount;
+    private final Integer likeCount;
+    private final Integer dislikeCount;
+    private final Integer commentCount;
+    private final Integer quoteCount;
     private final LocalDateTime createdAt;
 }

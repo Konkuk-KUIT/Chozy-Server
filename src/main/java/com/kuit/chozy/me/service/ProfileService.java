@@ -1,9 +1,13 @@
 package com.kuit.chozy.me.service;
 
-import com.kuit.chozy.global.common.exception.ApiException;
-import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.bookmark.domain.Bookmark;
 import com.kuit.chozy.bookmark.repository.BookmarkRepository;
+import com.kuit.chozy.community.domain.Feed;
+import com.kuit.chozy.community.domain.FeedContentType;
+import com.kuit.chozy.community.domain.FeedKind;
+import com.kuit.chozy.community.repository.FeedRepository;
+import com.kuit.chozy.global.common.exception.ApiException;
+import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
 import com.kuit.chozy.me.dto.response.BookmarkAuthorResponse;
 import com.kuit.chozy.me.dto.response.BookmarkItemResponse;
@@ -11,10 +15,7 @@ import com.kuit.chozy.me.dto.response.BookmarkListResponse;
 import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.response.ReviewItemResponse;
 import com.kuit.chozy.me.dto.response.ReviewListResponse;
-import com.kuit.chozy.post.domain.Post;
-import com.kuit.chozy.post.repository.PostRepository;
 import com.kuit.chozy.user.domain.User;
-
 import com.kuit.chozy.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -37,7 +39,7 @@ import java.util.stream.Collectors;
 public class ProfileService {
 
     private final UserRepository userRepository;
-    private final PostRepository postRepository;
+    private final FeedRepository feedRepository;
     private final BookmarkRepository bookmarkRepository;
 
     @Transactional(readOnly = true)
@@ -81,6 +83,9 @@ public class ProfileService {
             user.setHeightPublic(request.getIsHeightPublic());
 
         if (request.getIsWeightPublic() != null)
+            user.setHeightPublic(request.getIsHeightPublic());
+
+        if (request.getIsWeightPublic() != null)
             user.setWeightPublic(request.getIsWeightPublic());
 
         return ProfileResponseDto.from(user);
@@ -89,33 +94,42 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public ReviewListResponse getMyReviews(String loginId, int page, int size) {
         User user = getActiveUser(loginId);
-        
+
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 50));
-        
+
         Pageable pageable = PageRequest.of(safePage, safeSize);
-        Page<Post> postPage = postRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
-        
-        return buildReviewListResponse(postPage);
+
+        Page<Feed> feedPage = feedRepository.findByUserIdAndContentTypeOrderByCreatedAtDesc(
+                user.getId(),
+                FeedContentType.REVIEW,
+                pageable
+        );
+
+        return buildReviewListResponse(feedPage);
     }
 
     @Transactional(readOnly = true)
     public ReviewListResponse searchMyReviews(String loginId, String keyword, int page, int size) {
         User user = getActiveUser(loginId);
-        
-        if (keyword == null || keyword.isBlank()) {
+
+        if (!StringUtils.hasText(keyword)) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
-        
+
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 50));
-        
+
         Pageable pageable = PageRequest.of(safePage, safeSize);
-        Page<Post> postPage = postRepository.findByUserIdAndContentContainingOrderByCreatedAtDesc(
-                user.getId(), keyword.trim(), pageable
+
+        Page<Feed> feedPage = feedRepository.findByUserIdAndSearchOrderByCreatedAtDesc(
+                user.getId(),
+                FeedContentType.REVIEW,
+                keyword.trim(),
+                pageable
         );
-        
-        return buildReviewListResponse(postPage);
+
+        return buildReviewListResponse(feedPage);
     }
 
     @Transactional(readOnly = true)
@@ -142,41 +156,50 @@ public class ProfileService {
         return buildBookmarkListResponse(bookmarkPage);
     }
 
-    private ReviewListResponse buildReviewListResponse(Page<Post> postPage) {
-        List<ReviewItemResponse> items = postPage.getContent().stream()
-                .map(post -> new ReviewItemResponse(
-                        post.getId(),
-                        post.getContent(),
-                        post.getImageUrls(),
-                        post.getLikeCount(),
-                        post.getDislikeCount(),
-                        post.getCommentCount(),
-                        post.getQuoteCount(),
-                        post.getCreatedAt()
+    private ReviewListResponse buildReviewListResponse(Page<Feed> feedPage) {
+        List<ReviewItemResponse> items = feedPage.getContent().stream()
+                .map(feed -> new ReviewItemResponse(
+                        feed.getId(),
+                        resolveFeedText(feed),
+                        List.of(),
+                        feed.getLikeCount(),
+                        feed.getDislikeCount(),
+                        feed.getCommentCount(),
+                        feed.getShareCount(),
+                        feed.getCreatedAt()
                 ))
                 .toList();
-        
+
         return new ReviewListResponse(
                 items,
-                postPage.getNumber(),
-                postPage.getSize(),
-                postPage.getTotalElements(),
-                postPage.getTotalPages(),
-                postPage.hasNext()
+                feedPage.getNumber(),
+                feedPage.getSize(),
+                feedPage.getTotalElements(),
+                feedPage.getTotalPages(),
+                feedPage.hasNext()
         );
     }
 
+    private String resolveFeedText(Feed feed) {
+        if (feed == null) return null;
+
+        if (feed.getKind() == FeedKind.QUOTE) {
+            return feed.getQuoteText();
+        }
+        return feed.getContent();
+    }
+
     private BookmarkListResponse buildBookmarkListResponse(Page<Bookmark> bookmarkPage) {
-        List<Long> postIds = bookmarkPage.getContent().stream()
-                .map(Bookmark::getPostId)
+        List<Long> feedIds = bookmarkPage.getContent().stream()
+                .map(Bookmark::getFeedId)
                 .distinct()
                 .toList();
 
-        Map<Long, Post> postMap = postRepository.findAllById(postIds).stream()
-                .collect(Collectors.toMap(Post::getId, Function.identity()));
+        Map<Long, Feed> feedMap = feedRepository.findAllById(feedIds).stream()
+                .collect(Collectors.toMap(Feed::getId, Function.identity()));
 
-        List<Long> authorIds = postMap.values().stream()
-                .map(Post::getUserId)
+        List<Long> authorIds = feedMap.values().stream()
+                .map(Feed::getUserId)
                 .distinct()
                 .toList();
 
@@ -184,7 +207,7 @@ public class ProfileService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         List<BookmarkItemResponse> items = bookmarkPage.getContent().stream()
-                .map(bookmark -> toBookmarkItem(bookmark, postMap, authorMap))
+                .map(bookmark -> toBookmarkItem(bookmark, feedMap, authorMap))
                 .filter(Objects::nonNull)
                 .toList();
 
@@ -200,15 +223,15 @@ public class ProfileService {
 
     private BookmarkItemResponse toBookmarkItem(
             Bookmark bookmark,
-            Map<Long, Post> postMap,
+            Map<Long, Feed> feedMap,
             Map<Long, User> authorMap
     ) {
-        Post post = postMap.get(bookmark.getPostId());
-        if (post == null) {
+        Feed feed = feedMap.get(bookmark.getFeedId());
+        if (feed == null) {
             return null;
         }
 
-        User author = authorMap.get(post.getUserId());
+        User author = authorMap.get(feed.getUserId());
         BookmarkAuthorResponse authorResponse = null;
         if (author != null) {
             authorResponse = new BookmarkAuthorResponse(
@@ -220,17 +243,17 @@ public class ProfileService {
         }
 
         return new BookmarkItemResponse(
-                post.getId(),
-                post.getContent(),
-                post.getImageUrls(),
+                feed.getId(),
+                resolveFeedText(feed),
+                List.of(),
                 authorResponse,
-                post.getLikeCount(),
-                post.getDislikeCount(),
-                post.getCommentCount(),
-                post.getQuoteCount(),
+                feed.getLikeCount(),
+                feed.getDislikeCount(),
+                feed.getCommentCount(),
+                feed.getShareCount(),
                 true,
                 bookmark.getCreatedAt(),
-                post.getCreatedAt()
+                feed.getCreatedAt()
         );
     }
 
