@@ -1,27 +1,28 @@
 package com.kuit.chozy.auth.dto.response;
 
-public record LoginResponse(
+public record KakaoLoginResponse(
         String accessToken,
         String refreshToken,
-        String tokenType,
         long accessTokenExpiresIn,
         long refreshTokenExpiresIn,
-        boolean needsOnboarding
+        boolean needsOnboarding,
+        boolean isNewUser
 ) {
-    public static LoginResponse of(
+    public static KakaoLoginResponse of(
             String accessToken,
             String refreshToken,
             long accessTokenExpiresIn,
             long refreshTokenExpiresIn,
-            boolean needsOnboarding
+            boolean needsOnboarding,
+            boolean isNewUser
     ) {
-        return new LoginResponse(
+        return new KakaoLoginResponse(
                 accessToken,
                 refreshToken,
-                "Bearer",
                 accessTokenExpiresIn,
                 refreshTokenExpiresIn,
-                needsOnboarding
+                needsOnboarding,
+                isNewUser
         );
     }
 }
