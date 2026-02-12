@@ -2,13 +2,10 @@ package com.kuit.chozy.global.common.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
-import io.swagger.v3.oas.models.info.Info;
-import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
+import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springframework.context.annotation.Configuration;
-
-import java.util.List;
+import io.swagger.v3.oas.models.info.Info;
 
 @Configuration
 public class SwaggerConfig {
@@ -16,9 +13,6 @@ public class SwaggerConfig {
     @Bean
     public OpenAPI openAPI() {
         return new OpenAPI()
-                .servers(List.of(
-                        new Server().url("http://3.37.183.205")
-                ))
                 .components(new Components()
                         .addSecuritySchemes("BearerAuth",
                                 new SecurityScheme()
