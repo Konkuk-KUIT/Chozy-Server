@@ -1,16 +1,18 @@
 package com.kuit.chozy.auth.service;
 
-
+import com.kuit.chozy.auth.dto.request.LoginRequest;
 import com.kuit.chozy.auth.dto.request.RefreshTokenRequest;
 import com.kuit.chozy.auth.dto.request.SignupRequest;
 import com.kuit.chozy.auth.dto.response.*;
+import com.kuit.chozy.auth.entity.AuthProvider;
 import com.kuit.chozy.auth.entity.TokenStatus;
+import com.kuit.chozy.auth.entity.UserAuth;
 import com.kuit.chozy.auth.entity.UserToken;
+import com.kuit.chozy.auth.repository.UserAuthRepository;
 import com.kuit.chozy.auth.repository.UserTokenRepository;
-import com.kuit.chozy.global.jwt.JwtUtil;
-import com.kuit.chozy.auth.dto.request.LoginRequest;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
+import com.kuit.chozy.global.jwt.JwtUtil;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.domain.UserStatus;
 import com.kuit.chozy.user.repository.UserRepository;
@@ -28,6 +30,8 @@ import java.util.List;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserAuthRepository userAuthRepository;
+
     private final JwtUtil jwtUtil;
     private final EmailVerificationService emailVerificationService;
     private final PasswordEncoder passwordEncoder;
@@ -35,14 +39,17 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(@Valid LoginRequest request) {
-        User user = userRepository.findByLoginId(request.loginId())
+        UserAuth userAuth = userAuthRepository
+                .findByProviderAndLoginId(AuthProvider.LOCAL, request.loginId())
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+
+        User user = userAuth.getUser();
 
         if (UserStatus.DELETED.equals(user.getStatus())) {
             throw new ApiException(ErrorCode.USER_NOT_FOUND);
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.password(), userAuth.getPasswordHash())) {
             throw new ApiException(ErrorCode.INVALID_CREDENTIALS);
         }
 
@@ -51,46 +58,46 @@ public class AuthService {
         String accessToken = jwtUtil.generateAccessToken(userId);
         String refreshToken = jwtUtil.generateRefreshToken(userId);
 
-        // 기존 토큰 무효화
         userTokenRepository.findByUserIdAndStatus(userId, TokenStatus.ACTIVE)
                 .ifPresent(UserToken::inactivate);
 
-        // 새 리프레시 토큰 저장
         userTokenRepository.save(UserToken.create(userId, refreshToken));
+
+        boolean needsOnboarding =
+                (user.getNickname() == null || user.getNickname().isBlank());
 
         return LoginResponse.of(
                 accessToken,
                 refreshToken,
                 jwtUtil.getAccessTokenExpiresInSeconds(),
-                jwtUtil.getRefreshTokenExpiresInSeconds()
+                jwtUtil.getRefreshTokenExpiresInSeconds(),
+                needsOnboarding
         );
     }
 
     @Transactional
     public Void signup(@Valid SignupRequest request) {
-        // 이메일 검증 확인
         emailVerificationService.assertVerified(request.email());
 
-        // 중복 체크
-        if(userRepository.existsByEmail(request.email())) {
+        if (userRepository.existsByEmail(request.email())) {
             throw new ApiException(ErrorCode.DUPLICATE_EMAIL);
         }
-        if(userRepository.existsByLoginId(request.loginId())) {
+        if (userAuthRepository.existsByProviderAndLoginId(AuthProvider.LOCAL, request.loginId())) {
             throw new ApiException(ErrorCode.DUPLICATE_LOGIN_ID);
         }
 
-        // 비밀번호 암호화
         String encodedPassword = passwordEncoder.encode(request.password());
 
-        // 유저 저장
-        User user = User.builder().
-                loginId(request.loginId()).
-                password(encodedPassword).
-                email(request.email()).
-                nickname(request.nickname()).
-                status(UserStatus.ACTIVE).
-        build();
-        userRepository.save(user);
+        User user = User.builder()
+                .email(request.email())
+                .nickname(request.nickname())
+                .status(UserStatus.ACTIVE)
+                .build();
+
+        user = userRepository.save(user);
+
+        UserAuth localAuth = UserAuth.createLocal(user, request.loginId(), encodedPassword);
+        userAuthRepository.save(localAuth);
 
         return null;
     }
@@ -116,7 +123,8 @@ public class AuthService {
         UserToken token = userTokenRepository.findByRefreshTokenAndStatus(refreshToken, TokenStatus.ACTIVE)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
 
-        if (token.getId().equals(userId)) {
+        /* TODO: token.getId() vs token.getUserId() 확인 필요 */
+        if (!token.getUserId().equals(userId)) {
             throw new ApiException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
 
@@ -126,7 +134,8 @@ public class AuthService {
 
     @Transactional
     public WithdrawResponse withdraw(Long userId) {
-        User user =  userRepository.findById(userId).orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         List<UserToken> tokens = userTokenRepository.findAllByUserIdAndStatus(userId, TokenStatus.ACTIVE);
         tokens.forEach(UserToken::inactivate);
@@ -136,7 +145,7 @@ public class AuthService {
     }
 
     public LoginIdCheckResponse checkLoginId(@NotBlank String loginId) {
-        boolean exists = userRepository.existsByLoginId(loginId);
+        boolean exists = userAuthRepository.existsByProviderAndLoginId(AuthProvider.LOCAL, loginId);
         return new LoginIdCheckResponse(!exists);
     }
 }
