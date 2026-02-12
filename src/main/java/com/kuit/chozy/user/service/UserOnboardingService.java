@@ -51,8 +51,15 @@ public class UserOnboardingService {
     }
 
     private void validateNickname(String nickname) {
-        /* 한글만 가능 (예: 1~10자). 필요하면 길이 조정 */
-        if (!nickname.matches("^[가-힣]{1,10}$")) {
+        if (nickname == null) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (nickname.length() > 8) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST);
+        }
+
+        if (!nickname.matches("^[가-힣 ]*$")) {
             throw new ApiException(ErrorCode.INVALID_REQUEST);
         }
     }
