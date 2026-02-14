@@ -9,8 +9,10 @@ import com.kuit.chozy.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -18,6 +20,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Profile("prod") // 원하면 "!prod"로 바꿔서 prod에서 아예 실행 안 하게 할 수도 있음
 public class DataInitializer implements CommandLineRunner {
 
     private final UserRepository userRepository;
@@ -29,7 +32,8 @@ public class DataInitializer implements CommandLineRunner {
         initializeAdminUser();
     }
 
-    private void initializeAdminUser() {
+    @Transactional
+    public void initializeAdminUser() {
         String adminLoginId = "admin";
         String rawAdminPassword = "admin123";
 
@@ -56,7 +60,11 @@ public class DataInitializer implements CommandLineRunner {
             userAuthRepository.save(adminAuth);
 
         } else {
-            admin = adminAuth.getUser();
+            // adminAuth.getUser()는 LAZY면 proxy일 수 있으니
+            // id만 뽑아서 users를 findById로 "실체 엔티티"로 다시 가져온다.
+            Long adminUserId = adminAuth.getUser().getId();
+            admin = userRepository.findById(adminUserId)
+                    .orElseThrow(() -> new IllegalStateException("admin user not found. id=" + adminUserId));
 
             // 4) 기존 adminAuth 있으면 비밀번호 해시 갱신(기존 정책 유지)
             String encoded = passwordEncoder.encode(rawAdminPassword);
