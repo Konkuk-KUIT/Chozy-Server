@@ -36,8 +36,10 @@ public class AuthController {
     }
 
     // 로그아웃 (토큰 필요)
-    @SecurityRequirement(name = "BearerAuth")
-    @Operation(summary = "로그아웃")
+    @Operation(
+            summary = "로그아웃",
+            security = { @SecurityRequirement(name = "BearerAuth") }
+    )
     @PostMapping("/logout")
     public ApiResponse<LogoutResponse> logout(@UserId Long userId){
         return ApiResponse.success(authService.logout(userId));
@@ -51,8 +53,10 @@ public class AuthController {
     }
 
     // 회원 탈퇴 (토큰 필요)
-    @SecurityRequirement(name = "BearerAuth")
-    @Operation(summary = "회원 탈퇴")
+    @Operation(
+            summary = "로그아웃",
+            security = { @SecurityRequirement(name = "BearerAuth") }
+    )
     @PostMapping("/withdraw")
     public ApiResponse<WithdrawResponse> withdraw(@UserId Long userId){
         return ApiResponse.success(authService.withdraw(userId));
