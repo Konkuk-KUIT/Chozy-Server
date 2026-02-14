@@ -71,7 +71,7 @@ public class CommunityFeedController {
     /**
      * 게시글 북마크 (true: 추가, false: 취소)
      */
-    @PostMapping("/{feedId}/bookmark")
+    @PostMapping("/{feedId}/bookmarks")
     public ApiResponse<String> setFeedBookmark(
             @UserId Long userId,
             @PathVariable Long feedId,
