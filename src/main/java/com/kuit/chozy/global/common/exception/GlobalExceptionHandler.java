@@ -1,6 +1,7 @@
 package com.kuit.chozy.global.common.exception;
 
 import com.kuit.chozy.global.common.response.ErrorResponse;
+import jakarta.servlet.ServletException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -26,7 +27,7 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    // 존재하지 않는 API (404)
+    // 존재하지 않는 API/정적 리소스 (404)
     @ExceptionHandler({NoHandlerFoundException.class, NoResourceFoundException.class})
     public ResponseEntity<ErrorResponse> handleNotFound(Exception e) {
         return ResponseEntity
@@ -34,6 +35,38 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(
                         4040,
                         "존재하지 않는 API 입니다."
+                ));
+    }
+
+    // (선택) 서블릿 예외로 감싸져 올라온 경우 root cause 보고 404/405 분기
+    @ExceptionHandler(ServletException.class)
+    public ResponseEntity<ErrorResponse> handleServletException(ServletException e) {
+        Throwable root = getRootCause(e);
+
+        if (root instanceof NoHandlerFoundException || root instanceof NoResourceFoundException) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse(
+                            4040,
+                            "존재하지 않는 API 입니다."
+                    ));
+        }
+
+        if (root instanceof HttpRequestMethodNotSupportedException) {
+            return ResponseEntity
+                    .status(HttpStatus.METHOD_NOT_ALLOWED)
+                    .body(new ErrorResponse(
+                            4050,
+                            "지원하지 않는 HTTP Method 입니다."
+                    ));
+        }
+
+        ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
+        return ResponseEntity
+                .status(errorCode.getHttpStatus())
+                .body(new ErrorResponse(
+                        errorCode.getCode(),
+                        errorCode.getMessage()
                 ));
     }
 
@@ -61,7 +94,8 @@ public class GlobalExceptionHandler {
                         "요청 값이 올바르지 않습니다."
                 ));
     }
-    
+
+    // 예상 못한 서버 오류
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
@@ -71,5 +105,13 @@ public class GlobalExceptionHandler {
                         errorCode.getCode(),
                         errorCode.getMessage()
                 ));
+    }
+
+    private Throwable getRootCause(Throwable t) {
+        Throwable cur = t;
+        while (cur.getCause() != null && cur.getCause() != cur) {
+            cur = cur.getCause();
+        }
+        return cur;
     }
 }
