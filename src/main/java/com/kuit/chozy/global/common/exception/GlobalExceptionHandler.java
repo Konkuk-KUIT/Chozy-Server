@@ -65,6 +65,7 @@ public class GlobalExceptionHandler {
                     ));
         }
 
+        // 404/405가 아닌 서블릿 예외는 원인 추적을 위해 스택을 남김
         log.error("[SERVLET_EXCEPTION] root={}", root.getClass().getName(), e);
 
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
@@ -104,6 +105,7 @@ public class GlobalExceptionHandler {
     // 예상 못한 서버 오류
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
+        // Swagger 500 원인 추적용: 스택 트레이스 출력
         log.error("[UNHANDLED_EXCEPTION]", e);
 
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
