@@ -2,7 +2,8 @@ package com.kuit.chozy.global.common.exception;
 
 import com.kuit.chozy.global.common.response.ErrorResponse;
 import jakarta.servlet.ServletException;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -13,9 +14,10 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
-@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     // 비즈니스 예외
     @ExceptionHandler(ApiException.class)
@@ -40,7 +42,7 @@ public class GlobalExceptionHandler {
                 ));
     }
 
-    // (선택) 서블릿 예외로 감싸져 올라온 경우 root cause 보고 404/405 분기
+    // 서블릿 예외로 감싸져 올라온 경우 root cause 보고 404/405 분기
     @ExceptionHandler(ServletException.class)
     public ResponseEntity<ErrorResponse> handleServletException(ServletException e) {
         Throwable root = getRootCause(e);
@@ -62,6 +64,9 @@ public class GlobalExceptionHandler {
                             "지원하지 않는 HTTP Method 입니다."
                     ));
         }
+
+        // 404/405가 아닌 서블릿 예외는 원인 추적을 위해 스택을 남김
+        log.error("[SERVLET_EXCEPTION] root={}", root.getClass().getName(), e);
 
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity
@@ -100,7 +105,9 @@ public class GlobalExceptionHandler {
     // 예상 못한 서버 오류
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception e) {
-        log.error("Unhandled exception", e); // ✅ 이거 추가
+        // Swagger 500 원인 추적용: 스택 트레이스 출력
+        log.error("[UNHANDLED_EXCEPTION]", e);
+
         ErrorCode errorCode = ErrorCode.INTERNAL_SERVER_ERROR;
         return ResponseEntity
                 .status(errorCode.getHttpStatus())
