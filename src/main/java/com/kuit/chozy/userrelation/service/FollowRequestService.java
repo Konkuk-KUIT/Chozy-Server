@@ -11,12 +11,11 @@ import com.kuit.chozy.userrelation.dto.response.FollowRequestProcessResponse;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
 import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Service
 public class FollowRequestService {
@@ -37,7 +36,7 @@ public class FollowRequestService {
 
     @Transactional
     public FollowRequestProcessResponse process(
-            Long meUserId,
+            Long userId,
             Long requestId,
             FollowRequestProcessRequest.ProcessStatus action
     ) {
@@ -46,7 +45,7 @@ public class FollowRequestService {
                 .orElseThrow(() -> new ApiException(ErrorCode.FOLLOW_REQUEST_NOT_FOUND));
 
         // 내가 받은 요청인지 검증 (targetId = me)
-        if (!request.getTargetId().equals(meUserId)) {
+        if (!request.getTargetId().equals(userId)) {
             throw new ApiException(ErrorCode.FOLLOW_REQUEST_FORBIDDEN);
         }
 
@@ -58,9 +57,9 @@ public class FollowRequestService {
         // 차단 관계 존재 여부 (양방향, active=true)
         boolean blocked =
                 blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(
-                        meUserId, request.getRequesterId())
+                        userId, request.getRequesterId())
                         || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(
-                        request.getRequesterId(), meUserId);
+                        request.getRequesterId(), userId);
 
         if (blocked) {
             throw new ApiException(ErrorCode.BLOCK_RELATION_EXISTS);
@@ -100,7 +99,7 @@ public class FollowRequestService {
     }
 
     @Transactional(readOnly = true)
-    public FollowRequestListResponse getMyPendingRequests(Long meUserId, int page, int size) {
+    public FollowRequestListResponse getMyPendingRequests(Long userId, int page, int size) {
 
         // page / size 검증
         if (page < 0 || size <= 0 || size > 50) {
@@ -109,7 +108,7 @@ public class FollowRequestService {
 
         PageRequest pageable = PageRequest.of(page, size);
         Page<FollowRequestListItemResponse> result =
-                followRequestRepository.findMyPendingRequests(meUserId, pageable);
+                followRequestRepository.findMyPendingRequests(userId, pageable);
 
         return new FollowRequestListResponse(
                 result.getContent(),

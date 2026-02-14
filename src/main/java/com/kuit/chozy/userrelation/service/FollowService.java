@@ -4,18 +4,17 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
-import com.kuit.chozy.userrelation.dto.response.FollowActionResponse;
 import com.kuit.chozy.userrelation.dto.FollowStatus;
+import com.kuit.chozy.userrelation.dto.response.FollowActionResponse;
 import com.kuit.chozy.userrelation.domain.Follow;
 import com.kuit.chozy.userrelation.domain.FollowRequest;
 import com.kuit.chozy.userrelation.domain.FollowRequestStatus;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
 import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
+import java.time.LocalDateTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Service
 public class FollowService {
@@ -38,17 +37,17 @@ public class FollowService {
     }
 
     @Transactional
-    public FollowActionResponse follow(Long meId, Long targetUserId) {
+    public FollowActionResponse follow(Long userId, Long targetUserId) {
 
-        if (meId == null) {
+        if (userId == null) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
 
-        if (meId.equals(targetUserId)) {
+        if (userId.equals(targetUserId)) {
             throw new ApiException(ErrorCode.SELF_FOLLOW_NOT_ALLOWED);
         }
 
-        User me = userRepository.findById(meId)
+        User me = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
         if (!me.isActive()) {
@@ -59,22 +58,22 @@ public class FollowService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_USER_NOT_FOUND));
 
         // 내가 상대를 차단한 경우
-        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(meId, targetUserId)) {
+        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(userId, targetUserId)) {
             throw new ApiException(ErrorCode.CANNOT_FOLLOW_BLOCKED_USER);
         }
 
         // 상대가 나를 차단한 경우
-        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, meId)) {
+        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, userId)) {
             throw new ApiException(ErrorCode.CANNOT_FOLLOW_BLOCKED_USER);
         }
 
-        if (followRepository.existsByFollowerIdAndFollowingId(meId, targetUserId)) {
+        if (followRepository.existsByFollowerIdAndFollowingId(userId, targetUserId)) {
             throw new ApiException(ErrorCode.ALREADY_FOLLOWING);
         }
 
         // 공개 계정이면 즉시 팔로우
         if (target.isAccountPublic()) {
-            Follow follow = new Follow(meId, targetUserId, LocalDateTime.now());
+            Follow follow = new Follow(userId, targetUserId, LocalDateTime.now());
             followRepository.save(follow);
 
             return new FollowActionResponse(
@@ -87,7 +86,7 @@ public class FollowService {
 
         // 비공개 계정이면 PENDING만 중복 금지 (REJECTED/CANCELED는 재요청 허용)
         boolean pendingExists = followRequestRepository.existsByRequesterIdAndTargetIdAndStatus(
-                meId,
+                userId,
                 targetUserId,
                 FollowRequestStatus.PENDING
         );
@@ -97,7 +96,7 @@ public class FollowService {
         }
 
         FollowRequest request = new FollowRequest(
-                meId,
+                userId,
                 targetUserId,
                 FollowRequestStatus.PENDING,
                 LocalDateTime.now()
@@ -114,17 +113,17 @@ public class FollowService {
     }
 
     @Transactional
-    public FollowActionResponse unfollowOrCancel(Long meId, Long targetUserId) {
+    public FollowActionResponse unfollowOrCancel(Long userId, Long targetUserId) {
 
-        if (meId == null) {
+        if (userId == null) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
 
-        if (meId.equals(targetUserId)) {
+        if (userId.equals(targetUserId)) {
             throw new ApiException(ErrorCode.SELF_FOLLOW_NOT_ALLOWED);
         }
 
-        User me = userRepository.findById(meId)
+        User me = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
         if (!me.isActive()) {
@@ -135,7 +134,7 @@ public class FollowService {
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_USER_NOT_FOUND));
 
         // 1) 이미 팔로우 중이면 언팔로우
-        return followRepository.findByFollowerIdAndFollowingId(meId, targetUserId)
+        return followRepository.findByFollowerIdAndFollowingId(userId, targetUserId)
                 .map(follow -> {
                     followRepository.delete(follow);
                     return new FollowActionResponse(targetUserId, FollowStatus.NONE, null, null);
@@ -143,7 +142,7 @@ public class FollowService {
                 .orElseGet(() -> {
                     // 2) PENDING 요청이 있으면 취소(CANCELED로 변경)
                     return followRequestRepository.findByRequesterIdAndTargetIdAndStatus(
-                                    meId, targetUserId, FollowRequestStatus.PENDING
+                                    userId, targetUserId, FollowRequestStatus.PENDING
                             )
                             .map(req -> {
                                 req.changeStatus(FollowRequestStatus.CANCELED);

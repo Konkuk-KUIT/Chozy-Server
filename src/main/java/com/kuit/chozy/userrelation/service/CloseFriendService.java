@@ -11,13 +11,12 @@ import com.kuit.chozy.userrelation.dto.response.CloseFriendSetResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendUnsetResponse;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.CloseFriendRepository;
+import java.time.LocalDateTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
 
 @Service
 public class CloseFriendService {
@@ -37,7 +36,7 @@ public class CloseFriendService {
     }
 
     @Transactional
-    public CloseFriendUnsetResponse unsetCloseFriend(Long meUserId, Long targetUserId) {
+    public CloseFriendUnsetResponse unsetCloseFriend(Long userId, Long targetUserId) {
 
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_USER_NOT_FOUND));
@@ -47,18 +46,18 @@ public class CloseFriendService {
 
         // 차단 관계 존재 여부 (양방향, active=true)
         boolean blocked =
-                blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(meUserId, targetUserId)
-                        || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, meUserId);
+                blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(userId, targetUserId)
+                        || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, userId);
 
         if (blocked) {
             throw new ApiException(ErrorCode.BLOCK_RELATION_EXISTS);
         }
 
         // 멱등 처리: 있으면 삭제, 없으면 그냥 성공
-        closeFriendRepository.findByUserIdAndTargetUserId(meUserId, targetUserId)
+        closeFriendRepository.findByUserIdAndTargetUserId(userId, targetUserId)
                 .ifPresent(existing -> closeFriendRepository.delete(existing));
         // 또는:
-        // closeFriendRepository.deleteByUserIdAndTargetUserId(meUserId, targetUserId);
+        // closeFriendRepository.deleteByUserIdAndTargetUserId(userId, targetUserId);
 
         return new CloseFriendUnsetResponse(
                 targetUserId,
@@ -68,12 +67,12 @@ public class CloseFriendService {
     }
 
     @Transactional(readOnly = true)
-    public CloseFriendListResponse getCloseFriends(Long meUserId, int page, int size) {
+    public CloseFriendListResponse getCloseFriends(Long userId, int page, int size) {
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 50));
 
         Pageable pageable = PageRequest.of(safePage, safeSize);
-        Page<CloseFriendItemResponse> result = closeFriendRepository.findCloseFriendItems(meUserId, pageable);
+        Page<CloseFriendItemResponse> result = closeFriendRepository.findCloseFriendItems(userId, pageable);
 
         return new CloseFriendListResponse(
                 result.getContent(),
@@ -85,12 +84,11 @@ public class CloseFriendService {
         );
     }
 
-
     @Transactional
-    public CloseFriendSetResponse setCloseFriend(Long meUserId, Long targetUserId) {
+    public CloseFriendSetResponse setCloseFriend(Long userId, Long targetUserId) {
 
         // 자기 자신 설정 불가
-        if (meUserId.equals(targetUserId)) {
+        if (userId.equals(targetUserId)) {
             throw new ApiException(ErrorCode.SELF_CLOSE_FRIEND_NOT_ALLOWED);
         }
 
@@ -98,22 +96,17 @@ public class CloseFriendService {
         User targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.TARGET_USER_NOT_FOUND));
 
-        // 비활성화 계정 체크 (UserStatus 사용 중이면 여기서)
-        // if (targetUser.getStatus() == UserStatus.INACTIVE) {
-        //     throw new ApiException(ErrorCode.USER_INACTIVE);
-        // }
-
         // 차단 관계 존재 여부 (양방향, active = true)
         boolean blocked =
-                blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(meUserId, targetUserId)
-                        || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, meUserId);
+                blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(userId, targetUserId)
+                        || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, userId);
 
         if (blocked) {
             throw new ApiException(ErrorCode.BLOCK_RELATION_EXISTS);
         }
 
         // 이미 친한 친구면 멱등 성공 처리
-        return closeFriendRepository.findByUserIdAndTargetUserId(meUserId, targetUserId)
+        return closeFriendRepository.findByUserIdAndTargetUserId(userId, targetUserId)
                 .map(existing -> new CloseFriendSetResponse(
                         existing.getTargetUserId(),
                         true,
@@ -121,8 +114,10 @@ public class CloseFriendService {
                 ))
                 .orElseGet(() -> {
                     LocalDateTime now = LocalDateTime.now();
-                    CloseFriend saved =
-                            closeFriendRepository.save(new CloseFriend(meUserId, targetUserId, now));
+
+                    CloseFriend saved = closeFriendRepository.save(
+                            new CloseFriend(userId, targetUserId, now)
+                    );
 
                     return new CloseFriendSetResponse(
                             saved.getTargetUserId(),

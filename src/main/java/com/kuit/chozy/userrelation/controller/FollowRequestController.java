@@ -1,5 +1,6 @@
 package com.kuit.chozy.userrelation.controller;
 
+import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.userrelation.dto.request.FollowRequestProcessRequest;
 import com.kuit.chozy.userrelation.dto.response.FollowRequestListResponse;
@@ -8,6 +9,7 @@ import com.kuit.chozy.userrelation.service.FollowRequestService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/users")
 public class FollowRequestController {
 
     private final FollowRequestService followRequestService;
@@ -16,29 +18,27 @@ public class FollowRequestController {
         this.followRequestService = followRequestService;
     }
 
-    @PatchMapping("/users/follow-requests/{requestId}")
+    // 팔로우 요청 수락/거절
+    @PatchMapping("/follow-requests/{requestId}")
     public ApiResponse<FollowRequestProcessResponse> process(
+            @UserId Long userId,
             @PathVariable Long requestId,
             @RequestBody FollowRequestProcessRequest request
-            // meUserId 주입: 프로젝트 인증 방식으로 교체
     ) {
-        Long meUserId = 1L; // TODO: 인증 연동
-
-        FollowRequestProcessResponse result =
-                followRequestService.process(meUserId, requestId, request.getStatus());
-
-        return ApiResponse.success(result);
+        return ApiResponse.success(
+                followRequestService.process(userId, requestId, request.getStatus())
+        );
     }
 
-    @GetMapping("/users/me/follow-requests")
+    // 내 팔로우 요청 목록 조회
+    @GetMapping("/me/follow-requests")
     public ApiResponse<FollowRequestListResponse> list(
+            @UserId Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
-            // meUserId 주입: 프로젝트 인증 방식으로 교체
     ) {
-        Long meUserId = 1L; // TODO: 인증 연동
-
-        FollowRequestListResponse result = followRequestService.getMyPendingRequests(meUserId, page, size);
-        return ApiResponse.success(result);
+        return ApiResponse.success(
+                followRequestService.getMyPendingRequests(userId, page, size)
+        );
     }
 }

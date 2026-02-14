@@ -4,11 +4,11 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
-import com.kuit.chozy.userrelation.dto.*;
 import com.kuit.chozy.userrelation.domain.Block;
 import com.kuit.chozy.userrelation.domain.Follow;
 import com.kuit.chozy.userrelation.domain.FollowRequest;
 import com.kuit.chozy.userrelation.domain.FollowRequestStatus;
+import com.kuit.chozy.userrelation.dto.FollowStatus;
 import com.kuit.chozy.userrelation.dto.response.FollowerItemResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowerListResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowingItemResponse;
@@ -16,13 +16,15 @@ import com.kuit.chozy.userrelation.dto.response.FollowingListResponse;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
 import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
-import org.springframework.data.domain.*;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class FollowListService {
@@ -45,11 +47,11 @@ public class FollowListService {
     }
 
     @Transactional(readOnly = true)
-    public FollowerListResponse getFollowers(Long meId, int page, int size) {
+    public FollowerListResponse getFollowers(Long userId, int page, int size) {
 
         validatePage(page, size);
 
-        User me = userRepository.findById(meId)
+        User me = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
         if (!me.isActive()) {
@@ -63,7 +65,7 @@ public class FollowListService {
         );
 
         Page<Follow> followerPage =
-                followRepository.findByFollowingId(meId, pageable);
+                followRepository.findByFollowingId(userId, pageable);
 
         if (followerPage.isEmpty()) {
             return new FollowerListResponse(
@@ -83,18 +85,20 @@ public class FollowListService {
         Map<Long, User> userMap = userRepository.findByIdIn(followerIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        Set<Long> myFollowingSet = followRepository.findByFollowerIdAndFollowingIdIn(meId, followerIds).stream()
+        Set<Long> myFollowingSet = followRepository
+                .findByFollowerIdAndFollowingIdIn(userId, followerIds)
+                .stream()
                 .map(Follow::getFollowingId)
                 .collect(Collectors.toSet());
 
         Set<Long> pendingRequestSet = followRequestRepository
-                .findByRequesterIdAndTargetIdInAndStatus(meId, followerIds, FollowRequestStatus.PENDING)
+                .findByRequesterIdAndTargetIdInAndStatus(userId, followerIds, FollowRequestStatus.PENDING)
                 .stream()
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
         Set<Long> blockedSet = blockRepository
-                .findByBlockerIdAndBlockedIdInAndActiveTrue(meId, followerIds)
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(userId, followerIds)
                 .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
@@ -104,31 +108,30 @@ public class FollowListService {
 
         List<FollowerItemResponse> items = followerPage.getContent().stream()
                 .map(follow -> {
-                    Long userId = follow.getFollowerId();
-                    User u = userMap.get(userId);
+                    Long followerId = follow.getFollowerId();
+                    User u = userMap.get(followerId);
 
-                    // user row가 없으면 방어적으로 스킵 대신 최소값 처리(원하면 예외로 바꿔도 됨)
                     if (u == null) {
                         return null;
                     }
 
                     FollowStatus myFollowStatus = computeMyFollowStatus(
-                            myFollowingSet.contains(userId),
-                            pendingRequestSet.contains(userId)
+                            myFollowingSet.contains(followerId),
+                            pendingRequestSet.contains(followerId)
                     );
 
-                    boolean isFollowing = myFollowingSet.contains(userId);
+                    boolean isFollowing = myFollowingSet.contains(followerId);
 
                     return new FollowerItemResponse(
-                            userId,
+                            followerId,
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
                             u.isAccountPublic(),
                             isFollowing,
                             myFollowStatus,
-                            blockedSet.contains(userId),
-                            closeFriendSet.contains(userId),
+                            blockedSet.contains(followerId),
+                            closeFriendSet.contains(followerId),
                             follow.getCreatedAt()
                     );
                 })
@@ -146,11 +149,11 @@ public class FollowListService {
     }
 
     @Transactional(readOnly = true)
-    public FollowingListResponse getFollowings(Long meId, int page, int size) {
+    public FollowingListResponse getFollowings(Long userId, int page, int size) {
 
         validatePage(page, size);
 
-        User me = userRepository.findById(meId)
+        User me = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
         if (!me.isActive()) {
@@ -164,7 +167,7 @@ public class FollowListService {
         );
 
         Page<Follow> followingPage =
-                followRepository.findByFollowerId(meId, pageable);
+                followRepository.findByFollowerId(userId, pageable);
 
         if (followingPage.isEmpty()) {
             return new FollowingListResponse(
@@ -184,26 +187,22 @@ public class FollowListService {
         Map<Long, User> userMap = userRepository.findByIdIn(followingIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        // 내가 팔로우 중인 리스트는 기본적으로 전부 FOLLOWING이긴 하지만,
-        // 명세에 myFollowStatus가 들어가서 "FOLLOWING"으로 넣는다.
         Set<Long> myFollowingSet = new HashSet<>(followingIds);
 
-        // 혹시 follow 테이블 없고 요청 상태만 존재하는 케이스가 있으면 REQUESTED가 필요하지만,
-        // followings 목록은 "실제 follow" 기준이므로 보통 REQUESTED는 여기서 안 뜸.
-        // 그래도 명세 필드 유지 목적이라 pendingSet을 넣어 계산해둠.
         Set<Long> pendingRequestSet = followRequestRepository
-                .findByRequesterIdAndTargetIdInAndStatus(meId, followingIds, FollowRequestStatus.PENDING)
+                .findByRequesterIdAndTargetIdInAndStatus(userId, followingIds, FollowRequestStatus.PENDING)
                 .stream()
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
-        // 상대가 나를 팔로우하는지(맞팔)
-        Set<Long> followingMeSet = followRepository.findByFollowerIdInAndFollowingId(followingIds, meId).stream()
+        Set<Long> followingMeSet = followRepository
+                .findByFollowerIdInAndFollowingId(followingIds, userId)
+                .stream()
                 .map(Follow::getFollowerId)
                 .collect(Collectors.toSet());
 
         Set<Long> blockedSet = blockRepository
-                .findByBlockerIdAndBlockedIdInAndActiveTrue(meId, followingIds)
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(userId, followingIds)
                 .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
@@ -212,31 +211,31 @@ public class FollowListService {
 
         List<FollowingItemResponse> items = followingPage.getContent().stream()
                 .map(follow -> {
-                    Long userId = follow.getFollowingId();
-                    User u = userMap.get(userId);
+                    Long followingId = follow.getFollowingId();
+                    User u = userMap.get(followingId);
 
                     if (u == null) {
                         return null;
                     }
 
                     FollowStatus myFollowStatus = computeMyFollowStatus(
-                            myFollowingSet.contains(userId),
-                            pendingRequestSet.contains(userId)
+                            myFollowingSet.contains(followingId),
+                            pendingRequestSet.contains(followingId)
                     );
 
                     boolean isFollowedByMe = myFollowStatus == FollowStatus.FOLLOWING;
 
                     return new FollowingItemResponse(
-                            userId,
+                            followingId,
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
                             u.isAccountPublic(),
                             myFollowStatus,
                             isFollowedByMe,
-                            followingMeSet.contains(userId),
-                            blockedSet.contains(userId),
-                            closeFriendSet.contains(userId),
+                            followingMeSet.contains(followingId),
+                            blockedSet.contains(followingId),
+                            closeFriendSet.contains(followingId),
                             follow.getCreatedAt()
                     );
                 })
