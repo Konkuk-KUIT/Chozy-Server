@@ -9,11 +9,13 @@ import com.kuit.chozy.community.service.CommunitySearchService;
 import com.kuit.chozy.home.dto.request.SaveSearchKeywordRequest;
 import com.kuit.chozy.home.dto.response.RecentSearchKeywordResponse;
 import com.kuit.chozy.home.dto.response.RecommendSearchKeywordResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/community/searches")
 @RequiredArgsConstructor

@@ -6,8 +6,10 @@ import com.kuit.chozy.userrelation.dto.response.BlockResponse;
 import com.kuit.chozy.userrelation.dto.response.BlockedUserListResponse;
 import com.kuit.chozy.userrelation.dto.response.UnblockResponse;
 import com.kuit.chozy.userrelation.service.BlockService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/users")
 public class BlockController {
