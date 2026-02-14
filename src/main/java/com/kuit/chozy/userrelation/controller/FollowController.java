@@ -7,8 +7,9 @@ import com.kuit.chozy.userrelation.dto.response.FollowerListResponse;
 import com.kuit.chozy.userrelation.dto.response.FollowingListResponse;
 import com.kuit.chozy.userrelation.service.FollowListService;
 import com.kuit.chozy.userrelation.service.FollowService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
-
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/users")
 public class FollowController {

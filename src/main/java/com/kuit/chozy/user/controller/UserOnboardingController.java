@@ -3,10 +3,12 @@ package com.kuit.chozy.user.controller;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.user.dto.request.OnboardingNicknameRequest;
 import com.kuit.chozy.user.service.UserOnboardingService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/users/me")

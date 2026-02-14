@@ -7,6 +7,7 @@ import com.kuit.chozy.auth.dto.response.*;
 import com.kuit.chozy.auth.service.AuthService;
 import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class AuthController {
     }
 
     // 로그아웃 (토큰 필요)
+    @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "로그아웃")
     @PostMapping("/logout")
     public ApiResponse<LogoutResponse> logout(@UserId Long userId){
@@ -49,6 +51,7 @@ public class AuthController {
     }
 
     // 회원 탈퇴 (토큰 필요)
+    @SecurityRequirement(name = "BearerAuth")
     @Operation(summary = "회원 탈퇴")
     @PostMapping("/withdraw")
     public ApiResponse<WithdrawResponse> withdraw(@UserId Long userId){

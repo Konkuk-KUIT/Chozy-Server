@@ -8,11 +8,13 @@ import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
 import com.kuit.chozy.me.dto.response.ReviewListResponse;
 import com.kuit.chozy.me.service.ProfileService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @Slf4j
 @RestController
 @RequestMapping("/me")

@@ -6,8 +6,10 @@ import com.kuit.chozy.userrelation.dto.response.CloseFriendListResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendSetResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendUnsetResponse;
 import com.kuit.chozy.userrelation.service.CloseFriendService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/users/me/close-friends")
 public class CloseFriendController {
