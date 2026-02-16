@@ -91,6 +91,8 @@ public class AuthService {
         User user = User.builder()
                 .email(request.email())
                 .nickname(request.nickname())
+                .loginId(request.loginId())
+                .password(encodedPassword)
                 .status(UserStatus.ACTIVE)
                 .build();
 
