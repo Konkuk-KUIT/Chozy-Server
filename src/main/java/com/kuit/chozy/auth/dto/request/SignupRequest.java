@@ -16,8 +16,8 @@ public record SignupRequest(
 
         @NotBlank
         @Pattern(
-                regexp = "^[가-힣]{1,8}$",
-                message = "닉네임은 8자 이하 한글만 사용할 수 있습니다."
+                regexp = "^[가-힣]+( [가-힣]+)*$",
+                message = "닉네임은 한글과 단일 공백만 사용할 수 있습니다."
         )
         String nickname
 
