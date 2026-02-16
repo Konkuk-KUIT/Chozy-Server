@@ -54,4 +54,4 @@ jobs:
             EOF
             
             docker rm -f chozy-spring || true
-            docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans --force-recreate
