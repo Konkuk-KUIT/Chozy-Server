@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 
@@ -43,6 +44,9 @@ public class FeedComment {
     @Column(name = "mention_name", length = 100)
     private String mentionName;
 
+    @Column(name = "reply_to_user_id")
+    private Long replyToUserId;
+
     @Column(name = "comment_count", nullable = false)
     @Builder.Default
     private Integer commentCount = 0;
@@ -62,4 +66,14 @@ public class FeedComment {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private CommentStatus status = CommentStatus.ACTIVE;
 }
+

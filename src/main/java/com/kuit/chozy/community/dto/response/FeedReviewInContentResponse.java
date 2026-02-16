@@ -5,12 +5,15 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentCountsResponse {
-    private Integer likeCount;
-    private Integer dislikeCount;
-    private Integer replyCount;  // 직계 대댓글 개수
+public class FeedReviewInContentResponse {
+    private String vendor;
+    private String title;
+    private BigDecimal rating;
+    private String productUrl;
 }

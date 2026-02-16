@@ -3,7 +3,7 @@ package com.kuit.chozy.community.controller;
 import com.kuit.chozy.community.dto.request.*;
 import com.kuit.chozy.community.dto.response.CommentCreateResponse;
 import com.kuit.chozy.community.dto.response.FeedDetailResponse;
-import com.kuit.chozy.community.dto.response.FeedItemResponse;
+import com.kuit.chozy.community.dto.response.FeedListResultResponse;
 import com.kuit.chozy.community.domain.FeedTab;
 import com.kuit.chozy.community.service.CommunityFeedService;
 import com.kuit.chozy.global.common.auth.UserId;
@@ -28,18 +28,19 @@ public class CommunityFeedController {
     private final CommunityFeedService communityFeedService;
 
     /**
-     * 피드 목록 조회
+     * 게시글 목록 조회 (cursor 기반 페이징)
+     * tab: RECOMMEND | FOLLOWING, contentType: ALL | POST | REVIEW, search: 검색어
      */
     @GetMapping
-    public ApiResponse<List<FeedItemResponse>> getFeeds(
+    public ApiResponse<FeedListResultResponse> getFeeds(
             @UserId Long userId,
             @RequestParam(defaultValue = "RECOMMEND") FeedTab tab,
             @RequestParam(defaultValue = "ALL") String contentType,
             @RequestParam(required = false) String search,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String cursor,
             @RequestParam(defaultValue = "20") int size
     ) {
-        List<FeedItemResponse> result = communityFeedService.getFeeds(userId, tab, contentType, search, page, size);
+        FeedListResultResponse result = communityFeedService.getFeeds(userId, tab, contentType, search, cursor, size);
         return ApiResponse.success(result);
     }
 
@@ -72,7 +73,7 @@ public class CommunityFeedController {
     /**
      * 게시글 북마크 (true: 추가, false: 취소)
      */
-    @PostMapping("/{feedId}/bookmark")
+    @PostMapping("/{feedId}/bookmarks")
     public ApiResponse<String> setFeedBookmark(
             @UserId Long userId,
             @PathVariable Long feedId,

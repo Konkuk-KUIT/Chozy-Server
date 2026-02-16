@@ -11,8 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedMyStateResponse {
-    private ReactionType reaction; // LIKE | DISLIKE | NONE
+    private ReactionType reactionType; // LIKE | DISLIKE | NONE
     private boolean isBookmarked;
     private boolean isReposted;
-    private Boolean isFollowing;  // 상세 조회 시에만 사용 (게시글 작성자 팔로우 여부)
+    private boolean isFollowing;  // 게시글 작성자 팔로우 여부
 }
