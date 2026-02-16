@@ -21,6 +21,8 @@ public enum ErrorCode {
     INVALID_OAUTH_REQUEST(HttpStatus.BAD_REQUEST, 4014, "OAuth 요청이 올바르지 않습니다."),
     KAKAO_TOKEN_INVALID(HttpStatus.BAD_REQUEST, 4015, "카카오 토큰 발급에 실패했습니다."),
     KAKAO_USERINFO_INVALID(HttpStatus.BAD_REQUEST, 4016, "카카오 사용자 정보 조회에 실패했습니다."),
+    NAVER_TOKEN_INVALID(HttpStatus.BAD_REQUEST, 4017, "네이버 토큰 발급에 실패했습니다."),
+    NAVER_USERINFO_INVALID(HttpStatus.BAD_REQUEST, 4018, "네이버 사용자 정보 조회에 실패했습니다."),
 
     // ================= 401 =================
     INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, 4010, "아이디 또는 비밀번호가 올바르지 않습니다."),
@@ -64,6 +66,7 @@ public enum ErrorCode {
 
     // ================= 502 =================
     KAKAO_COMMUNICATION_FAILED(HttpStatus.BAD_GATEWAY, 5020, "카카오 서버와의 통신에 실패했습니다."),
+    NAVER_COMMUNICATION_FAILED(HttpStatus.BAD_GATEWAY, 5021, "네이버 서버와의 통신에 실패했습니다."),
 
     // ================= 500 =================
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, 5000, "서버 내부 오류가 발생했습니다.");
