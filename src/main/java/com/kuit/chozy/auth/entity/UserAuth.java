@@ -77,6 +77,14 @@ public class UserAuth {
                 .build();
     }
 
+    public static UserAuth createNaver(User user, String providerUserId) {
+        return UserAuth.builder()
+                .user(user)
+                .provider(AuthProvider.NAVER)
+                .providerUserId(providerUserId)
+                .build();
+    }
+
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
