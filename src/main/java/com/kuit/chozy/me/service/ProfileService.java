@@ -43,17 +43,17 @@ public class ProfileService {
     private final BookmarkRepository bookmarkRepository;
 
     @Transactional(readOnly = true)
-    public ProfileResponseDto getMyProfile(String loginId) {
-        User user = getActiveUser(loginId);
+    public ProfileResponseDto getMyProfile(Long userId) {
+        User user = getActiveUser(userId);
         return ProfileResponseDto.from(user);
     }
 
     @Transactional
     public ProfileResponseDto updateMyProfile(
-            String loginId,
+            Long userId,
             ProfileUpdateDto request
     ) {
-        User user = getActiveUser(loginId);
+        User user = getActiveUser(userId);
 
         if (request.getNickname() != null)
             user.setNickname(request.getNickname());
@@ -83,17 +83,14 @@ public class ProfileService {
             user.setHeightPublic(request.getIsHeightPublic());
 
         if (request.getIsWeightPublic() != null)
-            user.setHeightPublic(request.getIsHeightPublic());
-
-        if (request.getIsWeightPublic() != null)
-            user.setWeightPublic(request.getIsWeightPublic());
+            user.setHeightPublic(request.getIsWeightPublic());
 
         return ProfileResponseDto.from(user);
     }
 
     @Transactional(readOnly = true)
-    public ReviewListResponse getMyReviews(String loginId, int page, int size) {
-        User user = getActiveUser(loginId);
+    public ReviewListResponse getMyReviews(Long userId, int page, int size) {
+        User user = getActiveUser(userId);
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 50));
@@ -110,8 +107,8 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public ReviewListResponse searchMyReviews(String loginId, String keyword, int page, int size) {
-        User user = getActiveUser(loginId);
+    public ReviewListResponse searchMyReviews(Long userId, String keyword, int page, int size) {
+        User user = getActiveUser(userId);
 
         if (!StringUtils.hasText(keyword)) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
@@ -133,8 +130,8 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public BookmarkListResponse getMyBookmarks(String loginId, int page, int size) {
-        User user = getActiveUser(loginId);
+    public BookmarkListResponse getMyBookmarks(Long userId, int page, int size) {
+        User user = getActiveUser(userId);
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, 50));
@@ -257,8 +254,8 @@ public class ProfileService {
         );
     }
 
-    private User getActiveUser(String loginId) {
-        User user = userRepository.findByLoginId(loginId)
+    private User getActiveUser(Long userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
 
         if (!user.isActive()) {
