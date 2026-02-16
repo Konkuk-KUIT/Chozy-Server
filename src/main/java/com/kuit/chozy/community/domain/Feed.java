@@ -6,18 +6,17 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(
-        name = "feeds",
+        name = "feed",
         indexes = {
-                @Index(name = "idx_feeds_user_id", columnList = "user_id"),
-                @Index(name = "idx_feeds_content_type", columnList = "content_type"),
-                @Index(name = "idx_feeds_created_at", columnList = "created_at")
+                @Index(name = "idx_feed_user_id", columnList = "user_id"),
+                @Index(name = "idx_feed_content_type", columnList = "content_type"),
+                @Index(name = "idx_feed_created_at", columnList = "created_at")
         }
 )
 @Data
@@ -30,61 +29,70 @@ public class Feed {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "kind", nullable = false, length = 20)
+    private FeedKind kind;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "content_type", nullable = false, length = 20)
     private FeedContentType contentType;
 
-    @Column(name = "user_id", nullable = false)
-    private Long userId;
+    @Column(name = "original_feed_id")
+    private Long originalFeedId;
 
-    @Column(nullable = false, length = 5000)
-    private String text;
+    @Column(name = "content", columnDefinition = "TEXT")
+    private String content;
 
-    @ElementCollection
-    @CollectionTable(name = "feed_images", joinColumns = @JoinColumn(name = "feed_id"))
-    @Column(name = "image_url")
+    @Column(name = "quote_text", length = 500)
+    private String quoteText;
+
+    @Column(name = "hashtags", nullable = false, columnDefinition = "json")
     @Builder.Default
-    private List<String> contentImgs = new ArrayList<>();
+    private String hashtags = "[]";
 
-    // REVIEW 타입 전용 (POST 타입은 null)
-    @Column(length = 200)
-    private String vendor;
-
-    @Column(name = "product_url", length = 2048)
-    private String productUrl;
-
-    @Column(length = 500)
-    private String title;
-
-    private Float rating;
-
-    @Column(name = "quote_feed_id")
-    private Long quoteFeedId;
-
-    @Column(name = "hash_tags", length = 1000)
-    private String hashTags;
-
-    @Column(nullable = false)
+    @Column(name = "view_count", nullable = false)
     @Builder.Default
-    private Long views = 0L;
-
-    @Column(name = "comment_count", nullable = false)
-    @Builder.Default
-    private Long commentCount = 0L;
+    private Integer viewCount = 0;
 
     @Column(name = "like_count", nullable = false)
     @Builder.Default
-    private Long likeCount = 0L;
+    private Integer likeCount = 0;
 
     @Column(name = "dislike_count", nullable = false)
     @Builder.Default
-    private Long dislikeCount = 0L;
+    private Integer dislikeCount = 0;
 
-    @Column(name = "quote_count", nullable = false)
+    @Column(name = "comment_count", nullable = false)
     @Builder.Default
-    private Long quoteCount = 0L;
+    private Integer commentCount = 0;
+
+    @Column(name = "share_count", nullable = false)
+    @Builder.Default
+    private Integer shareCount = 0;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    @Builder.Default
+    private FeedStatus status = FeedStatus.ACTIVE;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    // REVIEW 타입 전용
+    @Column(name = "vendor")
+    private String vendor;
+
+    @Column(name = "rating", precision = 2, scale = 1)
+    private java.math.BigDecimal rating;
+
+    @Column(name = "product_url", length = 2048)
+    private String productUrl;
 }

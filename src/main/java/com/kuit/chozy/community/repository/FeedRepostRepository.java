@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface FeedRepostRepository extends JpaRepository<FeedRepost, Long> {
 
@@ -17,4 +18,6 @@ public interface FeedRepostRepository extends JpaRepository<FeedRepost, Long> {
 
     @Query("SELECT fr FROM FeedRepost fr WHERE fr.sourceFeedId = :feedId OR fr.targetFeedId = :feedId")
     List<FeedRepost> findBySourceFeedIdOrTargetFeedId(@Param("feedId") Long feedId);
+
+    Optional<FeedRepost> findByUserIdAndSourceFeedId(Long userId, Long sourceFeedId);
 }

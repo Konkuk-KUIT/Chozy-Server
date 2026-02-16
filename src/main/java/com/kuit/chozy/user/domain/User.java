@@ -23,20 +23,20 @@ public class User {
     private Long id;
 
     // =============== Auth ===============
-    @Column(nullable = false, unique = true, length = 50)
+    @Column(unique = true, length = 50)
     private String loginId;
 
-    @Column(nullable = false)
+    @Column
     private String password;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true)
     private String email;
 
     // =============== Profile ===============
     @Column
     private String name;
 
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private String nickname;
 
     @Column(length = 20)

@@ -21,7 +21,10 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.data.domain.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -45,29 +48,30 @@ public class BlockService {
     }
 
     @Transactional
-    public BlockResponse block(Long meId, Long targetUserId) {
-        validateBlockTarget(meId, targetUserId);
+    public BlockResponse block(Long userId, Long targetUserId) {
+        validateBlockTarget(userId, targetUserId);
 
         // 재차단(soft delete) 대비: active 조건 없이 조회해야 유니크 충돌 방지
         Block block = blockRepository
-                .findByBlockerIdAndBlockedId(meId, targetUserId)
-                .orElseGet(() -> new Block(meId, targetUserId));
+                .findByBlockerIdAndBlockedId(userId, targetUserId)
+                .orElseGet(() -> new Block(userId, targetUserId));
 
         // 멱등 처리 + blockedAt 갱신
         block.activate();
 
         Block saved = blockRepository.save(block);
 
-        cleanupFollowRelations(meId, targetUserId);
+        cleanupFollowRelations(userId, targetUserId);
 
         return new BlockResponse(targetUserId, true, saved.getBlockedAt());
     }
 
     @Transactional
-    public UnblockResponse unblock(Long meId, Long targetUserId) {
-        validateUnblockTarget(meId, targetUserId);
+    public UnblockResponse unblock(Long userId, Long targetUserId) {
+        validateUnblockTarget(userId, targetUserId);
 
-        Block block = blockRepository.findByBlockerIdAndBlockedIdAndActiveTrue(meId, targetUserId)
+        Block block = blockRepository
+                .findByBlockerIdAndBlockedIdAndActiveTrue(userId, targetUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.NOT_BLOCKED));
 
         block.deactivate();
@@ -77,8 +81,7 @@ public class BlockService {
     }
 
     @Transactional
-    public BlockedUserListResponse getBlockedUsers(Long meId, int page, int size) {
-
+    public BlockedUserListResponse getBlockedUsers(Long userId, int page, int size) {
         validatePage(page, size);
 
         Pageable pageable = PageRequest.of(
@@ -87,7 +90,8 @@ public class BlockService {
                 Sort.by("blockedAt").descending()
         );
 
-        Page<Block> blockPage = blockRepository.findByBlockerIdAndActiveTrueOrderByBlockedAtDesc(meId, pageable);
+        Page<Block> blockPage =
+                blockRepository.findByBlockerIdAndActiveTrueOrderByBlockedAtDesc(userId, pageable);
 
         if (blockPage.isEmpty()) {
             return new BlockedUserListResponse(
@@ -107,17 +111,21 @@ public class BlockService {
         Map<Long, User> userMap = userRepository.findByIdIn(blockedIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        Set<Long> myFollowingSet = followRepository.findByFollowerIdAndFollowingIdIn(meId, blockedIds).stream()
+        Set<Long> myFollowingSet = followRepository
+                .findByFollowerIdAndFollowingIdIn(userId, blockedIds)
+                .stream()
                 .map(Follow::getFollowingId)
                 .collect(Collectors.toSet());
 
         Set<Long> pendingRequestSet = followRequestRepository
-                .findByRequesterIdAndTargetIdInAndStatus(meId, blockedIds, FollowRequestStatus.PENDING)
+                .findByRequesterIdAndTargetIdInAndStatus(userId, blockedIds, FollowRequestStatus.PENDING)
                 .stream()
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
-        Set<Long> followingMeSet = followRepository.findByFollowerIdInAndFollowingId(blockedIds, meId).stream()
+        Set<Long> followingMeSet = followRepository
+                .findByFollowerIdInAndFollowingId(blockedIds, userId)
+                .stream()
                 .map(Follow::getFollowerId)
                 .collect(Collectors.toSet());
 
@@ -125,30 +133,30 @@ public class BlockService {
 
         List<FollowingItemResponse> items = blockPage.getContent().stream()
                 .map(b -> {
-                    Long userId = b.getBlockedId();
-                    User u = userMap.get(userId);
+                    Long blockedUserId = b.getBlockedId();
+                    User u = userMap.get(blockedUserId);
                     if (u == null) {
                         return null;
                     }
 
                     FollowStatus myFollowStatus = computeMyFollowStatus(
-                            myFollowingSet.contains(userId),
-                            pendingRequestSet.contains(userId)
+                            myFollowingSet.contains(blockedUserId),
+                            pendingRequestSet.contains(blockedUserId)
                     );
 
                     boolean isFollowedByMe = myFollowStatus == FollowStatus.FOLLOWING;
 
                     return new FollowingItemResponse(
-                            userId,
+                            blockedUserId,
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
                             u.isAccountPublic(),
                             myFollowStatus,
                             isFollowedByMe,
-                            followingMeSet.contains(userId),
+                            followingMeSet.contains(blockedUserId),
                             true,
-                            closeFriendSet.contains(userId),
+                            closeFriendSet.contains(blockedUserId),
                             null
                     );
                 })
@@ -165,8 +173,8 @@ public class BlockService {
         );
     }
 
-    private void validateBlockTarget(Long meId, Long targetUserId) {
-        if (meId.equals(targetUserId)) {
+    private void validateBlockTarget(Long userId, Long targetUserId) {
+        if (userId.equals(targetUserId)) {
             throw new ApiException(ErrorCode.SELF_BLOCK_NOT_ALLOWED);
         }
         if (!userRepository.existsById(targetUserId)) {
@@ -174,8 +182,8 @@ public class BlockService {
         }
     }
 
-    private void validateUnblockTarget(Long meId, Long targetUserId) {
-        if (meId.equals(targetUserId)) {
+    private void validateUnblockTarget(Long userId, Long targetUserId) {
+        if (userId.equals(targetUserId)) {
             throw new ApiException(ErrorCode.SELF_UNBLOCK_NOT_ALLOWED);
         }
         if (!userRepository.existsById(targetUserId)) {
@@ -202,15 +210,15 @@ public class BlockService {
         return FollowStatus.NONE;
     }
 
-    private void cleanupFollowRelations(Long meId, Long targetUserId) {
+    private void cleanupFollowRelations(Long userId, Long targetUserId) {
         // (a) 내가 상대를 팔로우 중이면 -> INACTIVE
-        followRepository.updateStatus(meId, targetUserId, FollowStatus.FOLLOWING, FollowStatus.INACTIVE);
+        followRepository.updateStatus(userId, targetUserId, FollowStatus.FOLLOWING, FollowStatus.INACTIVE);
 
         // (b) 상대가 나를 팔로우 중이면 -> INACTIVE
-        followRepository.updateStatus(targetUserId, meId, FollowStatus.FOLLOWING, FollowStatus.INACTIVE);
+        followRepository.updateStatus(targetUserId, userId, FollowStatus.FOLLOWING, FollowStatus.INACTIVE);
 
-        // FollowRequest가 따로 존재하므로 "요청 정리"는 FollowRequestRepository에서 처리하는 게 정합성 맞음
-        followRequestRepository.deletePending(meId, targetUserId);
-        followRequestRepository.deletePending(targetUserId, meId);
+        // FollowRequest가 따로 존재하므로 "요청 정리"는 FollowRequestRepository에서 처리
+        followRequestRepository.deletePending(userId, targetUserId);
+        followRequestRepository.deletePending(targetUserId, userId);
     }
 }

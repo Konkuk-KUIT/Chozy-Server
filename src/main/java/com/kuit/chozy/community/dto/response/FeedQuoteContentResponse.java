@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -15,7 +16,7 @@ public class FeedQuoteContentResponse {
     private FeedUserResponse user;
     private String vendor;
     private String title;
-    private Float rating;
+    private BigDecimal rating;
     private String text;
     private List<String> contentImgs;
 }

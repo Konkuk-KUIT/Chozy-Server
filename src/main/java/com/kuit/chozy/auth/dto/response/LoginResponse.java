@@ -5,20 +5,23 @@ public record LoginResponse(
         String refreshToken,
         String tokenType,
         long accessTokenExpiresIn,
-        long refreshTokenExpiresIn
+        long refreshTokenExpiresIn,
+        boolean needsOnboarding
 ) {
     public static LoginResponse of(
             String accessToken,
             String refreshToken,
             long accessTokenExpiresIn,
-            long refreshTokenExpiresIn
+            long refreshTokenExpiresIn,
+            boolean needsOnboarding
     ) {
         return new LoginResponse(
                 accessToken,
                 refreshToken,
                 "Bearer",
                 accessTokenExpiresIn,
-                refreshTokenExpiresIn
+                refreshTokenExpiresIn,
+                needsOnboarding
         );
     }
 }

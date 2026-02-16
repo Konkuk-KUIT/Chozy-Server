@@ -1,12 +1,15 @@
 package com.kuit.chozy.userrelation.controller;
 
+import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendListResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendSetResponse;
 import com.kuit.chozy.userrelation.dto.response.CloseFriendUnsetResponse;
 import com.kuit.chozy.userrelation.service.CloseFriendService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/users/me/close-friends")
 public class CloseFriendController {
@@ -19,41 +22,32 @@ public class CloseFriendController {
 
     @PostMapping("/{targetUserId}")
     public ApiResponse<CloseFriendSetResponse> setCloseFriend(
+            @UserId Long userId,
             @PathVariable Long targetUserId
-            // 여기에 meId 주입
-            // 예: @AuthenticationPrincipal CustomUserDetails userDetails
     ) {
-        // TODO: accessToken 기반으로 meId 추출
-        // Long meId = userDetails.getUserId();
-        Long meId = 1L;
-
-        CloseFriendSetResponse result = closeFriendService.setCloseFriend(meId, targetUserId);
-        return ApiResponse.success(result);
+        return ApiResponse.success(
+                closeFriendService.setCloseFriend(userId, targetUserId)
+        );
     }
 
     @DeleteMapping("/{targetUserId}")
     public ApiResponse<CloseFriendUnsetResponse> unsetCloseFriend(
+            @UserId Long userId,
             @PathVariable Long targetUserId
     ) {
-        // Long meId = userDetails.getUserId();
-        // TODO: accessToken 기반으로 meId 추출
-        Long meId = 1L;
-
-        CloseFriendUnsetResponse result = closeFriendService.unsetCloseFriend(meId, targetUserId);
-        return ApiResponse.success(result);
+        return ApiResponse.success(
+                closeFriendService.unsetCloseFriend(userId, targetUserId)
+        );
     }
 
     @GetMapping
     public ApiResponse<CloseFriendListResponse> getCloseFriends(
+            @UserId Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
-            // TODO: accessToken 기반으로 meId 추출
     ) {
-        // Long meId = userDetails.getUserId();
-        Long meId = 1L;
-
-        CloseFriendListResponse result = closeFriendService.getCloseFriends(meId, page, size);
-        return ApiResponse.success(result);
+        return ApiResponse.success(
+                closeFriendService.getCloseFriends(userId, page, size)
+        );
     }
-
 }

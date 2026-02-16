@@ -6,11 +6,13 @@ import com.kuit.chozy.home.dto.response.PopularSearchKeywordResponse;
 import com.kuit.chozy.home.dto.response.RecentSearchKeywordResponse;
 import com.kuit.chozy.home.dto.response.RecommendSearchKeywordResponse;
 import com.kuit.chozy.home.service.HomeSearchService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequestMapping("/home/search")
 @RequiredArgsConstructor

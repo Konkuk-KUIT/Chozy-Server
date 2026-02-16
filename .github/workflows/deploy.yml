@@ -44,5 +44,17 @@ jobs:
           script: |
             cd /opt/chozy
             docker compose pull
+            
+            cat > .env << EOF
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            NAVER_MAIL_PASSWORD=${{ secrets.NAVER_MAIL_PASSWORD }}
+            COUPANG_DOMAIN=${{ secrets.COUPANG_DOMAIN }}
+            COUPANG_ACCESS_KEY=${{ secrets.COUPANG_ACCESS_KEY }}
+            COUPANG_SECRET_KEY=${{ secrets.COUPANG_SECRET_KEY }}
+            KAKAO_CLIENT_ID=${{secrets.KAKAO_CLIENT_ID}}
+            KAKAO_CLIENT_SECRET=${{secrets.KAKAO_CLIENT_SECRET}}
+            KAKAO_REDIRECT_URI${{secrets.KAKAO_REDIRECT_URI}}
+            EOF
+            
             docker rm -f chozy-spring || true
-            docker compose up -d --remove-orphans
+            docker compose up -d --remove-orphans --force-recreate
