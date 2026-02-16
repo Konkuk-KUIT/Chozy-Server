@@ -4,10 +4,10 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.global.jwt.JwtUtil;
-import com.kuit.chozy.me.dto.response.BookmarkListResponse;
+import com.kuit.chozy.me.dto.response.MeBookmarksPageResponse;
+import com.kuit.chozy.me.dto.response.MeReviewsPageResponse;
 import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
-import com.kuit.chozy.me.dto.response.ReviewListResponse;
 import com.kuit.chozy.me.service.ProfileService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,33 +64,47 @@ public class ProfileController {
         );
     }
 
+    /**
+     * 내 후기 목록 (페이지네이션)
+     * GET /me/reviews?page=0&size=20&sort=latest
+     */
     @GetMapping("/reviews")
-    public ApiResponse<ReviewListResponse> getMyReviews(
+    public ApiResponse<MeReviewsPageResponse> getMyReviews(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "latest") String sort
     ) {
         Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.getMyReviews(userId, page, size)
+                profileService.getMyReviews(userId, page, size, sort)
         );
     }
 
+    /**
+     * 내 후기 검색 (내용/키워드)
+     * GET /me/reviews/searches?keyword=kwd&page=0&size=20&sort=latest
+     */
     @GetMapping("/reviews/searches")
-    public ApiResponse<ReviewListResponse> searchMyReviews(
+    public ApiResponse<MeReviewsPageResponse> searchMyReviews(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam String keyword,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "latest") String sort
     ) {
         Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.searchMyReviews(userId, keyword, page, size)
+                profileService.searchMyReviews(userId, keyword, page, size, sort)
         );
     }
 
+    /**
+     * 내 북마크 목록 (페이지네이션)
+     * GET /me/bookmarks?page=0&size=20
+     */
     @GetMapping("/bookmarks")
-    public ApiResponse<BookmarkListResponse> getMyBookmarks(
+    public ApiResponse<MeBookmarksPageResponse> getMyBookmarks(
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size

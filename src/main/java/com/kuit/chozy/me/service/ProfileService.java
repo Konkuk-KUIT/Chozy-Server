@@ -1,20 +1,19 @@
 package com.kuit.chozy.me.service;
 
-import com.kuit.chozy.bookmark.domain.Bookmark;
-import com.kuit.chozy.bookmark.repository.BookmarkRepository;
 import com.kuit.chozy.community.domain.Feed;
+import com.kuit.chozy.community.domain.FeedBookmark;
 import com.kuit.chozy.community.domain.FeedContentType;
-import com.kuit.chozy.community.domain.FeedKind;
+import com.kuit.chozy.community.dto.response.FeedItemResponse;
+import com.kuit.chozy.community.repository.FeedBookmarkRepository;
 import com.kuit.chozy.community.repository.FeedRepository;
+import com.kuit.chozy.community.service.CommunityFeedService;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
-import com.kuit.chozy.me.dto.response.BookmarkAuthorResponse;
-import com.kuit.chozy.me.dto.response.BookmarkItemResponse;
-import com.kuit.chozy.me.dto.response.BookmarkListResponse;
+import com.kuit.chozy.me.dto.response.FeedBookmarkItemResponse;
+import com.kuit.chozy.me.dto.response.MeBookmarksPageResponse;
+import com.kuit.chozy.me.dto.response.MeReviewsPageResponse;
 import com.kuit.chozy.me.dto.response.ProfileResponseDto;
-import com.kuit.chozy.me.dto.response.ReviewItemResponse;
-import com.kuit.chozy.me.dto.response.ReviewListResponse;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,10 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -40,7 +38,8 @@ public class ProfileService {
 
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
-    private final BookmarkRepository bookmarkRepository;
+    private final FeedBookmarkRepository feedBookmarkRepository;
+    private final CommunityFeedService communityFeedService;
 
     @Transactional(readOnly = true)
     public ProfileResponseDto getMyProfile(Long userId) {
@@ -88,13 +87,14 @@ public class ProfileService {
         return ProfileResponseDto.from(user);
     }
 
+    private static final int MAX_PAGE_SIZE = 50;
+
     @Transactional(readOnly = true)
-    public ReviewListResponse getMyReviews(Long userId, int page, int size) {
+    public MeReviewsPageResponse getMyReviews(Long userId, int page, int size, String sort) {
         User user = getActiveUser(userId);
 
         int safePage = Math.max(page, 0);
-        int safeSize = Math.max(1, Math.min(size, 50));
-
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
         Page<Feed> feedPage = feedRepository.findByUserIdAndContentTypeOrderByCreatedAtDesc(
@@ -103,11 +103,19 @@ public class ProfileService {
                 pageable
         );
 
-        return buildReviewListResponse(feedPage);
+        List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), userId);
+        return MeReviewsPageResponse.builder()
+                .feeds(feeds)
+                .page(feedPage.getNumber())
+                .size(feedPage.getSize())
+                .totalElements(feedPage.getTotalElements())
+                .totalPages(feedPage.getTotalPages())
+                .hasNext(feedPage.hasNext())
+                .build();
     }
 
     @Transactional(readOnly = true)
-    public ReviewListResponse searchMyReviews(Long userId, String keyword, int page, int size) {
+    public MeReviewsPageResponse searchMyReviews(Long userId, String keyword, int page, int size, String sort) {
         User user = getActiveUser(userId);
 
         if (!StringUtils.hasText(keyword)) {
@@ -115,8 +123,7 @@ public class ProfileService {
         }
 
         int safePage = Math.max(page, 0);
-        int safeSize = Math.max(1, Math.min(size, 50));
-
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
         Page<Feed> feedPage = feedRepository.findByUserIdAndSearchOrderByCreatedAtDesc(
@@ -126,132 +133,73 @@ public class ProfileService {
                 pageable
         );
 
-        return buildReviewListResponse(feedPage);
+        List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), userId);
+        return MeReviewsPageResponse.builder()
+                .feeds(feeds)
+                .page(feedPage.getNumber())
+                .size(feedPage.getSize())
+                .totalElements(feedPage.getTotalElements())
+                .totalPages(feedPage.getTotalPages())
+                .hasNext(feedPage.hasNext())
+                .build();
     }
 
     @Transactional(readOnly = true)
-    public BookmarkListResponse getMyBookmarks(Long userId, int page, int size) {
+    public MeBookmarksPageResponse getMyBookmarks(Long userId, int page, int size) {
         User user = getActiveUser(userId);
 
         int safePage = Math.max(page, 0);
-        int safeSize = Math.max(1, Math.min(size, 50));
-
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         Pageable pageable = PageRequest.of(safePage, safeSize);
-        Page<Bookmark> bookmarkPage = bookmarkRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
+
+        Page<FeedBookmark> bookmarkPage = feedBookmarkRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
 
         if (bookmarkPage.isEmpty()) {
-            return new BookmarkListResponse(
-                    List.of(),
-                    bookmarkPage.getNumber(),
-                    bookmarkPage.getSize(),
-                    bookmarkPage.getTotalElements(),
-                    bookmarkPage.getTotalPages(),
-                    bookmarkPage.hasNext()
-            );
+            return MeBookmarksPageResponse.builder()
+                    .feeds(List.of())
+                    .page(bookmarkPage.getNumber())
+                    .size(bookmarkPage.getSize())
+                    .totalElements(bookmarkPage.getTotalElements())
+                    .totalPages(bookmarkPage.getTotalPages())
+                    .hasNext(bookmarkPage.hasNext())
+                    .build();
         }
 
-        return buildBookmarkListResponse(bookmarkPage);
-    }
-
-    private ReviewListResponse buildReviewListResponse(Page<Feed> feedPage) {
-        List<ReviewItemResponse> items = feedPage.getContent().stream()
-                .map(feed -> new ReviewItemResponse(
-                        feed.getId(),
-                        resolveFeedText(feed),
-                        List.of(),
-                        feed.getLikeCount(),
-                        feed.getDislikeCount(),
-                        feed.getCommentCount(),
-                        feed.getShareCount(),
-                        feed.getCreatedAt()
-                ))
-                .toList();
-
-        return new ReviewListResponse(
-                items,
-                feedPage.getNumber(),
-                feedPage.getSize(),
-                feedPage.getTotalElements(),
-                feedPage.getTotalPages(),
-                feedPage.hasNext()
-        );
-    }
-
-    private String resolveFeedText(Feed feed) {
-        if (feed == null) return null;
-
-        if (feed.getKind() == FeedKind.QUOTE) {
-            return feed.getQuoteText();
-        }
-        return feed.getContent();
-    }
-
-    private BookmarkListResponse buildBookmarkListResponse(Page<Bookmark> bookmarkPage) {
-        List<Long> feedIds = bookmarkPage.getContent().stream()
-                .map(Bookmark::getFeedId)
-                .distinct()
-                .toList();
-
+        List<FeedBookmark> bookmarks = bookmarkPage.getContent();
+        List<Long> feedIds = bookmarks.stream().map(FeedBookmark::getFeedId).toList();
         Map<Long, Feed> feedMap = feedRepository.findAllById(feedIds).stream()
-                .collect(Collectors.toMap(Feed::getId, Function.identity()));
+                .collect(Collectors.toMap(Feed::getId, f -> f));
 
-        List<Long> authorIds = feedMap.values().stream()
-                .map(Feed::getUserId)
-                .distinct()
-                .toList();
+        List<FeedBookmarkItemResponse> feeds = new ArrayList<>();
+        for (FeedBookmark bookmark : bookmarks) {
+            Feed feed = feedMap.get(bookmark.getFeedId());
+            if (feed == null) continue;
 
-        Map<Long, User> authorMap = userRepository.findByIdIn(authorIds).stream()
-                .collect(Collectors.toMap(User::getId, Function.identity()));
+            List<FeedItemResponse> itemList = communityFeedService.toFeedItemResponses(List.of(feed), userId);
+            if (itemList.isEmpty()) continue;
 
-        List<BookmarkItemResponse> items = bookmarkPage.getContent().stream()
-                .map(bookmark -> toBookmarkItem(bookmark, feedMap, authorMap))
-                .filter(Objects::nonNull)
-                .toList();
-
-        return new BookmarkListResponse(
-                items,
-                bookmarkPage.getNumber(),
-                bookmarkPage.getSize(),
-                bookmarkPage.getTotalElements(),
-                bookmarkPage.getTotalPages(),
-                bookmarkPage.hasNext()
-        );
-    }
-
-    private BookmarkItemResponse toBookmarkItem(
-            Bookmark bookmark,
-            Map<Long, Feed> feedMap,
-            Map<Long, User> authorMap
-    ) {
-        Feed feed = feedMap.get(bookmark.getFeedId());
-        if (feed == null) {
-            return null;
+            FeedItemResponse r = itemList.get(0);
+            feeds.add(FeedBookmarkItemResponse.builder()
+                    .feedId(r.getFeedId())
+                    .kind(r.getKind())
+                    .contentType(r.getContentType())
+                    .createdAt(r.getCreatedAt())
+                    .user(r.getUser())
+                    .contents(r.getContents())
+                    .counts(r.getCounts())
+                    .myState(r.getMyState())
+                    .bookmarkedAt(bookmark.getCreatedAt())
+                    .build());
         }
 
-        User author = authorMap.get(feed.getUserId());
-        BookmarkAuthorResponse authorResponse = null;
-        if (author != null) {
-            authorResponse = new BookmarkAuthorResponse(
-                    author.getId(),
-                    author.getLoginId(),
-                    author.getNickname(),
-                    author.getProfileImageUrl()
-            );
-        }
-
-        return new BookmarkItemResponse(
-                feed.getId(),
-                resolveFeedText(feed),
-                List.of(),
-                authorResponse,
-                feed.getLikeCount(),
-                feed.getDislikeCount(),
-                feed.getCommentCount(),
-                feed.getShareCount(),
-                true,
-                bookmark.getCreatedAt(),
-                feed.getCreatedAt()
-        );
+        return MeBookmarksPageResponse.builder()
+                .feeds(feeds)
+                .page(bookmarkPage.getNumber())
+                .size(bookmarkPage.getSize())
+                .totalElements(bookmarkPage.getTotalElements())
+                .totalPages(bookmarkPage.getTotalPages())
+                .hasNext(bookmarkPage.hasNext())
+                .build();
     }
 
     private User getActiveUser(Long userId) {

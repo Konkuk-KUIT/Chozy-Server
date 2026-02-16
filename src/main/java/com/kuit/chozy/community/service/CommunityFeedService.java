@@ -259,6 +259,14 @@ public class CommunityFeedService {
         return result;
     }
 
+    /**
+     * Feed 리스트를 FeedItemResponse 리스트로 변환 (마이피드 등에서 재사용)
+     */
+    public List<FeedItemResponse> toFeedItemResponses(List<Feed> feeds, Long currentUserId) {
+        if (feeds == null || feeds.isEmpty()) return List.of();
+        return buildFeedItemResponses(feeds, currentUserId);
+    }
+
     private List<String> parseHashtags(String hashtags) {
         if (hashtags == null || hashtags.isBlank()) return List.of();
         try {
