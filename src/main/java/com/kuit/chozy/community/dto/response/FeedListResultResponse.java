@@ -5,12 +5,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentCountsResponse {
-    private Integer likeCount;
-    private Integer dislikeCount;
-    private Integer replyCount;  // 직계 대댓글 개수
+public class FeedListResultResponse {
+    private List<FeedItemResponse> feeds;
+    private boolean hasNext;
+    private String nextCursor;
 }

@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class CommentCountsResponse {
-    private Integer likeCount;
-    private Integer dislikeCount;
-    private Integer replyCount;  // 직계 대댓글 개수
+public class FeedImageItemResponse {
+    private String imageUrl;
+    private int sortOrder;
+    private String contentType;
 }

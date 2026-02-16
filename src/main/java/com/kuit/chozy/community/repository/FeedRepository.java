@@ -83,5 +83,51 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
             Pageable pageable
     );
 
+    // ---- cursor 기반 페이징 (목록 조회) ----
 
+    @Query("SELECT f FROM Feed f WHERE (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType) ORDER BY f.id DESC")
+    List<Feed> findForRecommendCursor(
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+      AND (LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForRecommendCursorWithSearch(
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
+    @Query("SELECT f FROM Feed f WHERE f.userId IN :userIds AND (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType) ORDER BY f.id DESC")
+    List<Feed> findForFollowingCursor(
+            @Param("userIds") List<Long> userIds,
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE f.userId IN :userIds AND (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+      AND (LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForFollowingCursorWithSearch(
+            @Param("userIds") List<Long> userIds,
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("search") String search,
+            Pageable pageable
+    );
 }

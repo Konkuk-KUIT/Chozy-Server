@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommentMyStateResponse {
-    private ReactionType reaction;
+    private ReactionType reactionType;  // LIKE | DISLIKE | NONE
     private boolean isBookmarked;
     private boolean isReposted;
     private boolean isFollowing;

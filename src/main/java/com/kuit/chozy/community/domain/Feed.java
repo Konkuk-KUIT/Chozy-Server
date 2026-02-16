@@ -90,6 +90,9 @@ public class Feed {
     @Column(name = "vendor")
     private String vendor;
 
+    @Column(name = "title", length = 500)
+    private String title;
+
     @Column(name = "rating", precision = 2, scale = 1)
     private java.math.BigDecimal rating;
 

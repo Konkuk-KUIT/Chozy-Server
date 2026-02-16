@@ -34,6 +34,9 @@ public class FeedImage {
     @Column(name = "image_url", nullable = false, length = 2048)
     private String imageUrl;
 
+    @Column(name = "content_type", length = 100)
+    private String contentType;
+
     @Column(name = "sort_order", nullable = false)
     @Builder.Default
     private Integer sortOrder = 0;
