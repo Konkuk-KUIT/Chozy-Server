@@ -3,6 +3,7 @@ package com.kuit.chozy.me.controller;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.global.common.response.ApiResponse;
+import com.kuit.chozy.global.jwt.JwtUtil;
 import com.kuit.chozy.me.dto.response.BookmarkListResponse;
 import com.kuit.chozy.me.dto.response.ProfileResponseDto;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
@@ -22,22 +23,33 @@ import org.springframework.web.bind.annotation.*;
 public class ProfileController {
 
     private final ProfileService profileService;
+    private final JwtUtil jwtUtil;
 
-    // TODO: JWT token에서 loginId 추출
-    private String extractLoginId(String authorization) {
+    private Long extractUserId(String authorization) {
         if (authorization == null || authorization.isBlank()) {
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
-        return authorization;
+
+        if (!authorization.startsWith("Bearer ")) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
+
+        String token = authorization.substring(7); // "Bearer " 제거
+
+        try {
+            return jwtUtil.getUserId(token);
+        } catch (Exception e) {
+            throw new ApiException(ErrorCode.UNAUTHORIZED);
+        }
     }
 
     @GetMapping("/profile")
     public ApiResponse<ProfileResponseDto> getMyProfile(
             @RequestHeader(value = "Authorization", required = false) String authorization, HttpServletRequest request
     ) {
-        String loginId = extractLoginId(authorization);
+        Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.getMyProfile(loginId)
+                profileService.getMyProfile(userId)
         );
     }
 
@@ -46,9 +58,9 @@ public class ProfileController {
             @RequestHeader(value = "Authorization", required = false) String authorization,
             @RequestBody ProfileUpdateDto request
     ) {
-        String loginId = extractLoginId(authorization);
+        Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.updateMyProfile(loginId, request)
+                profileService.updateMyProfile(userId, request)
         );
     }
 
@@ -58,9 +70,9 @@ public class ProfileController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        String loginId = extractLoginId(authorization);
+        Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.getMyReviews(loginId, page, size)
+                profileService.getMyReviews(userId, page, size)
         );
     }
 
@@ -71,9 +83,9 @@ public class ProfileController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        String loginId = extractLoginId(authorization);
+        Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.searchMyReviews(loginId, keyword, page, size)
+                profileService.searchMyReviews(userId, keyword, page, size)
         );
     }
 
@@ -83,9 +95,9 @@ public class ProfileController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        String loginId = extractLoginId(authorization);
+        Long userId = extractUserId(authorization);
         return ApiResponse.success(
-                profileService.getMyBookmarks(loginId, page, size)
+                profileService.getMyBookmarks(userId, page, size)
         );
     }
 }
