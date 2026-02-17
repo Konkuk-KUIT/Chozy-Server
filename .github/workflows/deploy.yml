@@ -53,7 +53,7 @@ jobs:
             COUPANG_SECRET_KEY=${{ secrets.COUPANG_SECRET_KEY }}
             KAKAO_CLIENT_ID=${{secrets.KAKAO_CLIENT_ID}}
             KAKAO_CLIENT_SECRET=${{secrets.KAKAO_CLIENT_SECRET}}
-            KAKAO_REDIRECT_URI${{secrets.KAKAO_REDIRECT_URI}}
+            KAKAO_REDIRECT_URI=${{secrets.KAKAO_REDIRECT_URI}}
             EOF
             
             docker rm -f chozy-spring || true
