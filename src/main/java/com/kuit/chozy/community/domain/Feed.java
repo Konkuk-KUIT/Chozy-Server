@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(
-        name = "feed",
+        name = "feeds",
         indexes = {
                 @Index(name = "idx_feed_user_id", columnList = "user_id"),
                 @Index(name = "idx_feed_content_type", columnList = "content_type"),
