@@ -11,6 +11,7 @@ import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.global.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ public class CommunityFeedController {
      */
     @GetMapping
     public ApiResponse<FeedListResultResponse> getFeeds(
-            @OptionalUserId Long userId,
+            @Parameter(hidden = true) @OptionalUserId Long userId,
             @RequestParam(defaultValue = "RECOMMEND") FeedTab tab,
             @RequestParam(defaultValue = "ALL") String contentType,
             @RequestParam(required = false) String search,
@@ -50,7 +51,7 @@ public class CommunityFeedController {
      */
     @GetMapping("/{feedId}/detail")
     public ApiResponse<FeedDetailResponse> getFeedDetail(
-            @OptionalUserId Long userId,
+            @Parameter(hidden = true) @OptionalUserId Long userId,
             @PathVariable Long feedId
     ) {
         FeedDetailResponse result = communityFeedService.getFeedDetail(feedId, userId);
