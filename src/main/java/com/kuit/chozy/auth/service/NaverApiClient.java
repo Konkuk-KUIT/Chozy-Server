@@ -3,6 +3,7 @@ package com.kuit.chozy.auth.service;
 import com.kuit.chozy.global.common.config.OAuthConfig;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -10,6 +11,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
+@Slf4j
 @Component
 public class NaverApiClient {
 
@@ -32,7 +34,9 @@ public class NaverApiClient {
         form.add("client_secret", properties.getClientSecret());
         form.add("code", code);
         form.add("state", StringUtils.hasText(state) ? state : "");
-        form.add("redirect_uri", properties.getRedirectUri());
+        //form.add("redirect_uri", properties.getRedirectUri());
+
+        log.info("code: {}", code);
 
         try {
             return restClient.post()
