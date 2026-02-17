@@ -111,6 +111,11 @@ public class CommunityFeedService {
 
     private List<Feed> getFeedsWithoutSearchCursor(FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
+            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
+            if (userId == null) {
+                return List.of();
+            }
+
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
@@ -123,6 +128,11 @@ public class CommunityFeedService {
 
     private List<Feed> getFeedsBySearchCursor(String search, FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
+            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
+            if (userId == null) {
+                return List.of();
+            }
+
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
@@ -140,16 +150,25 @@ public class CommunityFeedService {
         Map<Long, User> userMap = userRepository.findByIdIn(new ArrayList<>(authorIds)).stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
 
-        Map<Long, FeedReaction> reactionMap = feedReactionRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
-                .collect(Collectors.toMap(FeedReaction::getFeedId, r -> r));
+        Map<Long, FeedReaction> reactionMap =
+                (currentUserId == null)
+                        ? Map.of()
+                        : feedReactionRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
+                                .collect(Collectors.toMap(FeedReaction::getFeedId, r -> r));
 
-        Set<Long> repostedFeedIds = feedRepostRepository.findByUserIdAndSourceFeedIdIn(currentUserId, feedIds).stream()
-                .map(FeedRepost::getSourceFeedId)
-                .collect(Collectors.toSet());
+        Set<Long> repostedFeedIds =
+                (currentUserId == null)
+                        ? Set.of()
+                        : feedRepostRepository.findByUserIdAndSourceFeedIdIn(currentUserId, feedIds).stream()
+                                .map(FeedRepost::getSourceFeedId)
+                                .collect(Collectors.toSet());
 
-        Set<Long> bookmarkedFeedIds = feedBookmarkRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
-                .map(FeedBookmark::getFeedId)
-                .collect(Collectors.toSet());
+        Set<Long> bookmarkedFeedIds =
+                (currentUserId == null)
+                        ? Set.of()
+                        : feedBookmarkRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
+                                .map(FeedBookmark::getFeedId)
+                                .collect(Collectors.toSet());
 
         Map<Long, List<FeedImage>> feedImagesMap = feedImageRepository.findByFeed_IdIn(feedIds).stream()
                 .collect(Collectors.groupingBy(fi -> fi.getFeed().getId()));
@@ -234,8 +253,11 @@ public class CommunityFeedService {
 
             FeedReaction reaction = reactionMap.get(feed.getId());
             ReactionType reactionType = reaction != null ? reaction.getReactionType() : ReactionType.NONE;
-            boolean isFollowing = !currentUserId.equals(feed.getUserId()) &&
-                    followRepository.existsByFollowerIdAndFollowingId(currentUserId, feed.getUserId());
+
+            boolean isFollowing = false;
+            if (currentUserId != null && !currentUserId.equals(feed.getUserId())) {
+                isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, feed.getUserId());
+            }
 
             FeedMyStateResponse myState = FeedMyStateResponse.builder()
                     .reactionType(reactionType)
@@ -358,15 +380,23 @@ public class CommunityFeedService {
                 .quoteCount(feed.getShareCount())
                 .build();
 
-        FeedReaction feedReaction = feedReactionRepository.findByUserIdAndFeedId(userId, feedId).orElse(null);
+        FeedReaction feedReaction = null;
+        boolean isBookmarked = false;
+        boolean isReposted = false;
+        boolean isFollowing = false;
 
-        boolean isBookmarked = feedBookmarkRepository.findByUserIdAndFeedIdIn(userId, List.of(feedId)).stream()
-                .anyMatch(b -> b.getFeedId().equals(feedId));
+        if (userId != null) {
+            feedReaction = feedReactionRepository.findByUserIdAndFeedId(userId, feedId).orElse(null);
 
-        boolean isReposted = feedRepostRepository.existsByUserIdAndSourceFeedId(userId, feedId);
+            isBookmarked = feedBookmarkRepository.findByUserIdAndFeedIdIn(userId, List.of(feedId)).stream()
+                    .anyMatch(b -> b.getFeedId().equals(feedId));
 
-        boolean isFollowing = !userId.equals(feed.getUserId()) &&
-                followRepository.existsByFollowerIdAndFollowingId(userId, feed.getUserId());
+            isReposted = feedRepostRepository.existsByUserIdAndSourceFeedId(userId, feedId);
+
+            if (!userId.equals(feed.getUserId())) {
+                isFollowing = followRepository.existsByFollowerIdAndFollowingId(userId, feed.getUserId());
+            }
+        }
 
         FeedMyStateResponse myState = FeedMyStateResponse.builder()
                 .reactionType(feedReaction != null ? feedReaction.getReactionType() : ReactionType.NONE)
@@ -405,8 +435,11 @@ public class CommunityFeedService {
         Map<Long, User> userMap = userRepository.findByIdIn(new ArrayList<>(authorIds)).stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
 
-        Map<Long, FeedCommentReaction> reactionMap = feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
-                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
+        Map<Long, FeedCommentReaction> reactionMap =
+                (currentUserId == null)
+                        ? Map.of()
+                        : feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
+                                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
 
         Set<Long> replyToUserIds = comments.stream().map(FeedComment::getReplyToUserId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, User> replyToUserMap = replyToUserIds.isEmpty() ? Map.of() : userRepository.findByIdIn(new ArrayList<>(replyToUserIds)).stream()
@@ -425,7 +458,7 @@ public class CommunityFeedService {
                     .commentId(c.getId())
                     .parentCommentId(c.getParentCommentId())
                     .depth(0)
-                    .isMine(c.getUserId().equals(currentUserId))
+                    .isMine(currentUserId != null && c.getUserId().equals(currentUserId))
                     .user(toFeedUserResponse(commentAuthor))
                     .content(c.getContent())
                     .replyTo(replyTo)
@@ -469,8 +502,11 @@ public class CommunityFeedService {
         Map<Long, User> userMap = userRepository.findByIdIn(new ArrayList<>(authorIds)).stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
 
-        Map<Long, FeedCommentReaction> reactionMap = feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
-                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
+        Map<Long, FeedCommentReaction> reactionMap =
+                (currentUserId == null)
+                        ? Map.of()
+                        : feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
+                                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
 
         Set<Long> replyToUserIds = comments.stream().map(FeedComment::getReplyToUserId).filter(Objects::nonNull).collect(Collectors.toSet());
         Map<Long, User> replyToUserMap = replyToUserIds.isEmpty() ? Map.of() : userRepository.findByIdIn(new ArrayList<>(replyToUserIds)).stream()
@@ -486,7 +522,7 @@ public class CommunityFeedService {
                     .commentId(c.getId())
                     .parentCommentId(c.getParentCommentId())
                     .depth(1)
-                    .isMine(c.getUserId().equals(currentUserId))
+                    .isMine(currentUserId != null && c.getUserId().equals(currentUserId))
                     .user(toFeedUserResponse(commentAuthor))
                     .content(c.getContent())
                     .replyTo(replyTo)

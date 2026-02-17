@@ -1,5 +1,6 @@
 package com.kuit.chozy.global.common.config;
 
+import com.kuit.chozy.global.common.auth.OptionalUserIdArgumentResolver;
 import com.kuit.chozy.global.common.auth.UserIdArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,7 @@ import java.util.List;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     private final UserIdArgumentResolver userIdArgumentResolver;
+    private final OptionalUserIdArgumentResolver optionalUserIdArgumentResolver;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
@@ -32,5 +34,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
         resolvers.add(userIdArgumentResolver);
+        resolvers.add(optionalUserIdArgumentResolver);
     }
 }
+
