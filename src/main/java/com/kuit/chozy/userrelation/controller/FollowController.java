@@ -40,21 +40,47 @@ public class FollowController {
 
     // 팔로워 목록 조회
     @GetMapping("/me/followers")
-    public ApiResponse<FollowerListResponse> getFollowers(
+    public ApiResponse<FollowerListResponse> getMyFollowers(
             @UserId Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ApiResponse.success(followListService.getFollowers(userId, page, size));
+        return ApiResponse.success(
+                followListService.getFollowers(userId, userId, page, size)
+        );
     }
 
     // 팔로잉 목록 조회
     @GetMapping("/me/followings")
-    public ApiResponse<FollowingListResponse> getFollowings(
+    public ApiResponse<FollowingListResponse> getMyFollowings(
             @UserId Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size
     ) {
-        return ApiResponse.success(followListService.getFollowings(userId, page, size));
+        return ApiResponse.success(
+                followListService.getFollowings(userId, userId, page, size)
+        );
+    }
+
+
+    // 타깃 팔로워/팔로잉 목록 조회
+    @GetMapping("/{targetUserId}/followers")
+    public ApiResponse<FollowerListResponse> getUserFollowers(
+            @UserId Long viewerId,
+            @PathVariable Long targetUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.success(followListService.getFollowers(viewerId, targetUserId, page, size));
+    }
+
+    @GetMapping("/{targetUserId}/followings")
+    public ApiResponse<FollowingListResponse> getUserFollowings(
+            @UserId Long viewerId,
+            @PathVariable Long targetUserId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size
+    ) {
+        return ApiResponse.success(followListService.getFollowings(viewerId, targetUserId, page, size));
     }
 }

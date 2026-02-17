@@ -36,6 +36,7 @@ public enum ErrorCode {
     FEED_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, 4035, "본인 게시글만 수정할 수 있습니다."),
     FOLLOW_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, 4032, "해당 팔로우 요청을 처리할 권한이 없습니다."),
     REVIEW_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, 4034, "리뷰 작성자만 수정할 수 있습니다."),
+    PRIVATE_ACCOUNT_FORBIDDEN(HttpStatus.FORBIDDEN, 4036, "비공개 계정의 팔로우 목록은 접근할 수 없습니다."),
 
     // ================= 404 =================
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4040, "사용자를 찾을 수 없습니다."),

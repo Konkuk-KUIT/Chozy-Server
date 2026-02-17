@@ -47,16 +47,17 @@ public class FollowListService {
     }
 
     @Transactional(readOnly = true)
-    public FollowerListResponse getFollowers(Long userId, int page, int size) {
-
+    public FollowerListResponse getFollowers(Long viewerId, Long targetUserId, int page, int size) {
         validatePage(page, size);
 
-        User me = userRepository.findById(userId)
+        User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
-        if (!me.isActive()) {
+        if (!target.isActive()) {
             throw new ApiException(ErrorCode.DEACTIVATED_ACCOUNT);
         }
+
+        validateViewPermission(viewerId, target);
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -65,7 +66,7 @@ public class FollowListService {
         );
 
         Page<Follow> followerPage =
-                followRepository.findByFollowingId(userId, pageable);
+                followRepository.findByFollowingId(targetUserId, pageable);
 
         if (followerPage.isEmpty()) {
             return new FollowerListResponse(
@@ -86,24 +87,23 @@ public class FollowListService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         Set<Long> myFollowingSet = followRepository
-                .findByFollowerIdAndFollowingIdIn(userId, followerIds)
+                .findByFollowerIdAndFollowingIdIn(viewerId, followerIds)
                 .stream()
                 .map(Follow::getFollowingId)
                 .collect(Collectors.toSet());
 
         Set<Long> pendingRequestSet = followRequestRepository
-                .findByRequesterIdAndTargetIdInAndStatus(userId, followerIds, FollowRequestStatus.PENDING)
+                .findByRequesterIdAndTargetIdInAndStatus(viewerId, followerIds, FollowRequestStatus.PENDING)
                 .stream()
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
         Set<Long> blockedSet = blockRepository
-                .findByBlockerIdAndBlockedIdInAndActiveTrue(userId, followerIds)
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(viewerId, followerIds)
                 .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
 
-        // close-friends 테이블이 아직 없다고 가정 → false 고정
         Set<Long> closeFriendSet = Set.of();
 
         List<FollowerItemResponse> items = followerPage.getContent().stream()
@@ -149,16 +149,17 @@ public class FollowListService {
     }
 
     @Transactional(readOnly = true)
-    public FollowingListResponse getFollowings(Long userId, int page, int size) {
-
+    public FollowingListResponse getFollowings(Long viewerId, Long targetUserId, int page, int size) {
         validatePage(page, size);
 
-        User me = userRepository.findById(userId)
+        User target = userRepository.findById(targetUserId)
                 .orElseThrow(() -> new ApiException(ErrorCode.UNAUTHORIZED));
 
-        if (!me.isActive()) {
+        if (!target.isActive()) {
             throw new ApiException(ErrorCode.DEACTIVATED_ACCOUNT);
         }
+
+        validateViewPermission(viewerId, target);
 
         Pageable pageable = PageRequest.of(
                 page,
@@ -167,7 +168,7 @@ public class FollowListService {
         );
 
         Page<Follow> followingPage =
-                followRepository.findByFollowerId(userId, pageable);
+                followRepository.findByFollowerId(targetUserId, pageable);
 
         if (followingPage.isEmpty()) {
             return new FollowingListResponse(
@@ -187,22 +188,26 @@ public class FollowListService {
         Map<Long, User> userMap = userRepository.findByIdIn(followingIds).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
-        Set<Long> myFollowingSet = new HashSet<>(followingIds);
+        Set<Long> myFollowingSet = followRepository
+                .findByFollowerIdAndFollowingIdIn(viewerId, followingIds)
+                .stream()
+                .map(Follow::getFollowingId)
+                .collect(Collectors.toSet());
 
         Set<Long> pendingRequestSet = followRequestRepository
-                .findByRequesterIdAndTargetIdInAndStatus(userId, followingIds, FollowRequestStatus.PENDING)
+                .findByRequesterIdAndTargetIdInAndStatus(viewerId, followingIds, FollowRequestStatus.PENDING)
                 .stream()
                 .map(FollowRequest::getTargetId)
                 .collect(Collectors.toSet());
 
         Set<Long> followingMeSet = followRepository
-                .findByFollowerIdInAndFollowingId(followingIds, userId)
+                .findByFollowerIdInAndFollowingId(followingIds, viewerId)
                 .stream()
                 .map(Follow::getFollowerId)
                 .collect(Collectors.toSet());
 
         Set<Long> blockedSet = blockRepository
-                .findByBlockerIdAndBlockedIdInAndActiveTrue(userId, followingIds)
+                .findByBlockerIdAndBlockedIdInAndActiveTrue(viewerId, followingIds)
                 .stream()
                 .map(Block::getBlockedId)
                 .collect(Collectors.toSet());
@@ -250,6 +255,23 @@ public class FollowListService {
                 followingPage.getTotalPages(),
                 followingPage.hasNext()
         );
+    }
+
+    private void validateViewPermission(Long viewerId, User target) {
+        if (target.isAccountPublic()) {
+            return;
+        }
+
+        if (viewerId.equals(target.getId())) {
+            return;
+        }
+
+        boolean isFollower = followRepository.existsByFollowerIdAndFollowingId(viewerId, target.getId());
+        if (isFollower) {
+            return;
+        }
+
+        throw new ApiException(ErrorCode.PRIVATE_ACCOUNT_FORBIDDEN);
     }
 
     private void validatePage(int page, int size) {
