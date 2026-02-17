@@ -23,4 +23,5 @@ public class FeedDetailContentResponse {
     private String content;
     private List<FeedImageItemResponse> feedImages;
     private List<String> hashTags;
+    private FeedQuoteInContentResponse quote;  // kind=QUOTE, REPOST일 때 존재
 }

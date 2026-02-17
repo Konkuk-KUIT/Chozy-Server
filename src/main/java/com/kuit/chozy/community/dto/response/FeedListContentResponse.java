@@ -15,5 +15,5 @@ public class FeedListContentResponse {
     private String text;
     private List<FeedImageItemResponse> images;
     private FeedReviewInContentResponse review;  // contentType=REVIEW일 때만
-    private FeedQuoteInContentResponse quote;    // kind=QUOTE일 때만
+    private FeedQuoteInContentResponse quote;    // kind=QUOTE, REPOST일 때 존재
 }

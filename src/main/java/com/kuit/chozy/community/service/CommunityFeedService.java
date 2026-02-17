@@ -173,8 +173,9 @@ public class CommunityFeedService {
         Map<Long, List<FeedImage>> feedImagesMap = feedImageRepository.findByFeed_IdIn(feedIds).stream()
                 .collect(Collectors.groupingBy(fi -> fi.getFeed().getId()));
 
+        // QUOTE, REPOST 모두 원문(OriginalFeed) 정보 필요 → contents.quote에 채움
         Set<Long> quoteOriginalIds = feeds.stream()
-                .filter(f -> f.getKind() == FeedKind.QUOTE && f.getOriginalFeedId() != null)
+                .filter(f -> (f.getKind() == FeedKind.QUOTE || f.getKind() == FeedKind.REPOST) && f.getOriginalFeedId() != null)
                 .map(Feed::getOriginalFeedId)
                 .collect(Collectors.toSet());
 
@@ -191,11 +192,6 @@ public class CommunityFeedService {
                 ? Map.of()
                 : userRepository.findByIdIn(new ArrayList<>(quoteOriginalAuthorIds)).stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
-
-        Map<Long, List<FeedImage>> quoteOriginalImagesMap = quoteOriginalIds.isEmpty()
-                ? Map.of()
-                : feedImageRepository.findByFeed_IdIn(new ArrayList<>(quoteOriginalIds)).stream()
-                .collect(Collectors.groupingBy(fi -> fi.getFeed().getId()));
 
         List<FeedItemResponse> result = new ArrayList<>();
         for (Feed feed : feeds) {
@@ -222,8 +218,9 @@ public class CommunityFeedService {
                         .build();
             }
 
+            // kind=QUOTE 또는 REPOST일 때 원문 정보. REPOST는 최상위 text 없음, QUOTE는 사용자 추가 text 있음(resolveFeedText에서 처리)
             FeedQuoteInContentResponse quoteContent = null;
-            if (feed.getKind() == FeedKind.QUOTE && feed.getOriginalFeedId() != null) {
+            if ((feed.getKind() == FeedKind.QUOTE || feed.getKind() == FeedKind.REPOST) && feed.getOriginalFeedId() != null) {
                 Feed original = quoteOriginalFeedMap.get(feed.getOriginalFeedId());
                 if (original != null) {
                     User ou = quoteOriginalUserMap.get(original.getUserId());
@@ -362,6 +359,20 @@ public class CommunityFeedService {
                         .build())
                 .toList();
 
+        FeedQuoteInContentResponse quoteContent = null;
+        if ((feed.getKind() == FeedKind.QUOTE || feed.getKind() == FeedKind.REPOST) && feed.getOriginalFeedId() != null) {
+            Feed original = feedRepository.findById(feed.getOriginalFeedId()).orElse(null);
+            if (original != null) {
+                User ou = userRepository.findById(original.getUserId()).orElse(null);
+                quoteContent = FeedQuoteInContentResponse.builder()
+                        .feedId(original.getId())
+                        .user(toFeedUserResponse(ou))
+                        .text(resolveOriginalText(original))
+                        .hashTags(parseHashtags(original.getHashtags()))
+                        .build();
+            }
+        }
+
         FeedDetailContentResponse contents = FeedDetailContentResponse.builder()
                 .vendor(feed.getVendor())
                 .productUrl(feed.getProductUrl())
@@ -370,6 +381,7 @@ public class CommunityFeedService {
                 .content(resolveFeedText(feed))
                 .feedImages(feedImageItems)
                 .hashTags(parseHashtags(feed.getHashtags()))
+                .quote(quoteContent)
                 .build();
 
         FeedCountsResponse countsResponse = FeedCountsResponse.builder()
