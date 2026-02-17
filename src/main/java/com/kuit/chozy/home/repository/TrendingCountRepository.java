@@ -18,6 +18,7 @@ public interface TrendingCountRepository extends JpaRepository<TrendingCount, Lo
     List<TrendingCount> findByStatus(SearchStatus status);
 
     List<TrendingCount> findTop10ByStatusOrderByDailyCountDesc(SearchStatus status);
+    List<TrendingCount> findTop20ByStatusOrderByDailyCountDesc(SearchStatus status);
 
     Optional<TrendingCount> findByKeywordAndStatus(String keyword, SearchStatus searchStatus);
 }

@@ -1,5 +1,6 @@
 package com.kuit.chozy.home.controller;
 
+import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.response.ApiResponse;
 import com.kuit.chozy.home.dto.request.SaveSearchKeywordRequest;
 import com.kuit.chozy.home.dto.response.PopularSearchKeywordResponse;
@@ -14,7 +15,7 @@ import java.util.List;
 
 @SecurityRequirement(name = "BearerAuth")
 @RestController
-@RequestMapping("/home/search")
+@RequestMapping("/home/searches")
 @RequiredArgsConstructor
 public class HomeSearchController {
 
@@ -23,8 +24,7 @@ public class HomeSearchController {
     // 최근 검색어 조회
     @GetMapping("/recent")
     public ApiResponse<RecentSearchKeywordResponse> getRecentSearchKeyword(
-            //TODO: 로그인 기능 생기면 변경
-            @RequestHeader("X-USER-ID") Long userId
+            @UserId Long userId
     ){
         return ApiResponse.success(homeSearchService.getRecentSearchKeyword(userId));
     }
@@ -46,7 +46,7 @@ public class HomeSearchController {
     // 검색어 저장
     @PostMapping
     public ApiResponse<Void> saveSearchKeyword(
-            @RequestHeader("X-USER-ID") Long userId,
+            @UserId Long userId,
             @RequestBody SaveSearchKeywordRequest request
     ){
         System.out.println("### saveSearchKeyword called ###");
