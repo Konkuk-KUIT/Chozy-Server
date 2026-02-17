@@ -1,6 +1,9 @@
 package com.kuit.chozy.community.repository;
 
 import com.kuit.chozy.community.domain.FeedReaction;
+import com.kuit.chozy.community.domain.ReactionType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,4 +18,10 @@ public interface FeedReactionRepository extends JpaRepository<FeedReaction, Long
     List<FeedReaction> findByFeedId(Long feedId);
 
     boolean existsByUserIdAndFeedId(Long userId, Long feedId);
+
+    Page<FeedReaction> findByUserIdAndReactionTypeOrderByCreatedAtDesc(
+            Long userId,
+            ReactionType reactionType,
+            Pageable pageable
+    );
 }

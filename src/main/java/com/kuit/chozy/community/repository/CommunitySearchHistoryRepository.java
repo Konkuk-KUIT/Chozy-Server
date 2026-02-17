@@ -26,4 +26,6 @@ public interface CommunitySearchHistoryRepository extends JpaRepository<Communit
             SearchStatus status, String keyword
     );
 
+    List<CommunitySearchHistory> findByUserIdAndStatus(Long userId, SearchStatus status);
+
 }
