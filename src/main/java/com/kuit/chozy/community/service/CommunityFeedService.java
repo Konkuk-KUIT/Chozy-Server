@@ -586,20 +586,43 @@ public class CommunityFeedService {
 
     @Transactional(readOnly = false)
     public void deleteFeed(Long feedId, Long userId) {
-        Feed feed = feedRepository.findById(feedId).orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
-        if (!feed.getUserId().equals(userId)) throw new ApiException(ErrorCode.FEED_DELETE_FORBIDDEN);
+        Feed feed = feedRepository.findById(feedId)
+                .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
+
+        if (!feed.getUserId().equals(userId)) {
+            throw new ApiException(ErrorCode.FEED_DELETE_FORBIDDEN);
+        }
+
+        if (feed.getKind() == FeedKind.REPOST || feed.getKind() == FeedKind.QUOTE) {
+            Long originalId = feed.getOriginalFeedId();
+
+            if (originalId != null) {
+                feedRepository.findById(originalId).ifPresent(original -> {
+                    int current = (original.getShareCount() == null ? 0 : original.getShareCount());
+                    original.setShareCount(Math.max(0, current - 1));
+                    feedRepository.save(original);
+                });
+            }
+        }
 
         List<FeedComment> comments = feedCommentRepository.findByFeedId(feedId);
         List<Long> commentIds = comments.stream().map(FeedComment::getId).toList();
 
         if (!commentIds.isEmpty()) {
-            feedCommentReactionRepository.findByCommentIdIn(commentIds).forEach(feedCommentReactionRepository::delete);
+            feedCommentReactionRepository.findByCommentIdIn(commentIds)
+                    .forEach(feedCommentReactionRepository::delete);
         }
 
         feedCommentRepository.deleteAll(comments);
-        feedReactionRepository.findByFeedId(feedId).forEach(feedReactionRepository::delete);
-        feedBookmarkRepository.findByFeedId(feedId).forEach(feedBookmarkRepository::delete);
-        feedRepostRepository.findBySourceFeedIdOrTargetFeedId(feedId).forEach(feedRepostRepository::delete);
+
+        feedReactionRepository.findByFeedId(feedId)
+                .forEach(feedReactionRepository::delete);
+
+        feedBookmarkRepository.findByFeedId(feedId)
+                .forEach(feedBookmarkRepository::delete);
+
+        feedRepostRepository.findBySourceFeedIdOrTargetFeedId(feedId)
+                .forEach(feedRepostRepository::delete);
 
         feedRepository.delete(feed);
     }
@@ -740,12 +763,16 @@ public class CommunityFeedService {
                         .build()
         );
 
+        source.setShareCount((source.getShareCount() == null ? 0 : source.getShareCount()) + 1);
+        feedRepository.save(source);
+
         return saved.getId();
     }
 
+
     @Transactional
     public Long createQuote(Long userId, Long sourceFeedId, String quoteText) {
-        feedRepository.findById(sourceFeedId)
+        Feed source = feedRepository.findById(sourceFeedId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
 
         if (!StringUtils.hasText(quoteText)) {
@@ -771,8 +798,14 @@ public class CommunityFeedService {
                 .status(FeedStatus.ACTIVE)
                 .build();
 
-        return feedRepository.save(quoteFeed).getId();
+        Long newId = feedRepository.save(quoteFeed).getId();
+
+        source.setShareCount((source.getShareCount() == null ? 0 : source.getShareCount()) + 1);
+        feedRepository.save(source);
+
+        return newId;
     }
+
 
     @Transactional
     public void updatePostFeed(Long feedId, Long userId, String content, String hashtags, List<String> imageUrls) {
@@ -830,5 +863,13 @@ public class CommunityFeedService {
         if (targetFeedId != null) {
             feedRepository.findById(targetFeedId).ifPresent(feedRepository::delete);
         }
+
+        Feed source = feedRepository.findById(sourceFeedId)
+                .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
+
+        int current = (source.getShareCount() == null ? 0 : source.getShareCount());
+        source.setShareCount(Math.max(0, current - 1));
+        feedRepository.save(source);
     }
+
 }
