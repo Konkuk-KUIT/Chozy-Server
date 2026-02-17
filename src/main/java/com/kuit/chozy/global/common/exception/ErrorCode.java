@@ -37,6 +37,7 @@ public enum ErrorCode {
     FOLLOW_REQUEST_FORBIDDEN(HttpStatus.FORBIDDEN, 4032, "해당 팔로우 요청을 처리할 권한이 없습니다."),
     REVIEW_UPDATE_FORBIDDEN(HttpStatus.FORBIDDEN, 4034, "리뷰 작성자만 수정할 수 있습니다."),
     PRIVATE_ACCOUNT_FORBIDDEN(HttpStatus.FORBIDDEN, 4036, "비공개 계정의 팔로우 목록은 접근할 수 없습니다."),
+    SEARCH_HISTORY_FORBIDDEN(HttpStatus.FORBIDDEN, 4037, "해당 검색 기록에 대한 권한이 없습니다."),
 
     // ================= 404 =================
     USER_NOT_FOUND(HttpStatus.NOT_FOUND, 4040, "사용자를 찾을 수 없습니다."),
@@ -47,6 +48,7 @@ public enum ErrorCode {
     FOLLOW_REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, 4047, "팔로우 요청을 찾을 수 없습니다."),
     REVIEW_NOT_FOUND(HttpStatus.NOT_FOUND, 4045, "리뷰를 찾을 수 없습니다."),
     REPOST_NOT_FOUND(HttpStatus.NOT_FOUND, 4046, "리포스트를 찾을 수 없습니다."),
+    SEARCH_HISTORY_NOT_FOUND(HttpStatus.NOT_FOUND, 4048, "검색 기록을 찾을 수 없습니다."),
 
     // ================= 409 =================
     CANNOT_FOLLOW_BLOCKED_USER(HttpStatus.CONFLICT, 4095, "차단한 사용자는 팔로우할 수 없습니다."),
