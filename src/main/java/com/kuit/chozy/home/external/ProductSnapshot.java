@@ -13,13 +13,11 @@ public class ProductSnapshot {
     private String name;
     private Integer listPrice;
     private Integer discountRate;
+    private Integer discountedPrice;
     private String productImageUrl;
     private String productUrl;
 
     private Double ratingAvg;
-    private Integer reviewCount;
-    private Integer shippingFee;
-    private Boolean isSoldOut;
 
     // 쿠팡
     private String impressionUrl;

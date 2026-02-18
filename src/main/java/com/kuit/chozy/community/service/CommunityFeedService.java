@@ -431,8 +431,9 @@ public class CommunityFeedService {
                 .myState(myState)
                 .build();
 
-        List<FeedComment> topComments = feedCommentRepository.findByFeedIdAndParentCommentIdIsNullOrderByCreatedAtAsc(feedId);
-        List<CommentItemResponse> comments = buildCommentResponses(topComments, userId);
+        // 댓글 전체를 한 번에 조회한 뒤, parentCommentId 기반으로 트리 구조를 빌드
+        List<FeedComment> allComments = feedCommentRepository.findByFeedId(feedId);
+        List<CommentItemResponse> comments = buildCommentTree(allComments, userId);
 
         return FeedDetailResponse.builder()
                 .feed(feedDetail)
@@ -440,63 +441,127 @@ public class CommunityFeedService {
                 .build();
     }
 
-    private List<CommentItemResponse> buildCommentResponses(List<FeedComment> comments, Long currentUserId) {
+    /**
+     * 댓글 전체 리스트를 parentCommentId 기반으로 트리 구조로 변환한다.
+     * depth: 0(최상위), 1(대댓글), 2(대댓글의 대댓글) ...
+     */
+    private List<CommentItemResponse> buildCommentTree(List<FeedComment> comments, Long currentUserId) {
         if (comments.isEmpty()) return List.of();
 
-        List<Long> commentIds = comments.stream().map(FeedComment::getId).toList();
-        Set<Long> authorIds = comments.stream().map(FeedComment::getUserId).collect(Collectors.toSet());
+        // commentId, authorIds, replyToUserIds 수집
+        List<Long> commentIds = comments.stream()
+                .map(FeedComment::getId)
+                .toList();
 
-        Map<Long, User> userMap = userRepository.findByIdIn(new ArrayList<>(authorIds)).stream()
+        Set<Long> authorIds = comments.stream()
+                .map(FeedComment::getUserId)
+                .collect(Collectors.toSet());
+
+        Set<Long> replyToUserIds = comments.stream()
+                .map(FeedComment::getReplyToUserId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+
+        // authorIds ∪ replyToUserIds 에 해당하는 사용자들 한번에 조회
+        Set<Long> allUserIds = new HashSet<>();
+        allUserIds.addAll(authorIds);
+        allUserIds.addAll(replyToUserIds);
+
+        Map<Long, User> userMap = allUserIds.isEmpty()
+                ? Map.of()
+                : userRepository.findByIdIn(new ArrayList<>(allUserIds)).stream()
                 .collect(Collectors.toMap(User::getId, u -> u));
 
+        // 현재 유저의 댓글 반응(좋아요/싫어요) 맵
         Map<Long, FeedCommentReaction> reactionMap =
                 (currentUserId == null)
                         ? Map.of()
                         : feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
-                                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
+                        .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
 
-        Set<Long> replyToUserIds = comments.stream().map(FeedComment::getReplyToUserId).filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, User> replyToUserMap = replyToUserIds.isEmpty() ? Map.of() : userRepository.findByIdIn(new ArrayList<>(replyToUserIds)).stream()
-                .collect(Collectors.toMap(User::getId, u -> u));
+        // parentCommentId → 자식 댓글 목록 매핑
+        Map<Long, List<FeedComment>> childrenByParentId = comments.stream()
+                .filter(c -> c.getParentCommentId() != null)
+                .collect(Collectors.groupingBy(FeedComment::getParentCommentId));
+
+        // 최상위 댓글(부모가 없는 댓글)만 root로 삼아 트리 구성
+        List<FeedComment> topLevel = comments.stream()
+                .filter(c -> c.getParentCommentId() == null)
+                .sorted(Comparator.comparing(FeedComment::getCreatedAt))
+                .toList();
 
         List<CommentItemResponse> result = new ArrayList<>();
-        for (FeedComment c : comments) {
-            List<FeedComment> replies = feedCommentRepository.findByParentCommentIdOrderByCreatedAtAsc(c.getId());
-            List<CommentItemResponse> replyResponses = buildCommentResponsesFlat(replies, currentUserId);
-
-            User commentAuthor = userMap.get(c.getUserId());
-            FeedCommentReaction reaction = reactionMap.get(c.getId());
-            CommentReplyToResponse replyTo = c.getReplyToUserId() != null ? toCommentReplyTo(replyToUserMap.get(c.getReplyToUserId())) : null;
-
-            result.add(CommentItemResponse.builder()
-                    .commentId(c.getId())
-                    .parentCommentId(c.getParentCommentId())
-                    .depth(0)
-                    .isMine(currentUserId != null && c.getUserId().equals(currentUserId))
-                    .user(toFeedUserResponse(commentAuthor))
-                    .content(c.getContent())
-                    .replyTo(replyTo)
-                    .mentions(List.of())
-                    .counts(CommentCountsResponse.builder()
-                            .likeCount(c.getLikeCount())
-                            .dislikeCount(c.getDislikeCount())
-                            .replyCount(c.getCommentCount())
-                            .build())
-                    .myState(CommentMyStateResponse.builder()
-                            .reactionType(reaction != null ? reaction.getReactionType() : ReactionType.NONE)
-                            .isBookmarked(false)
-                            .isReposted(false)
-                            .isFollowing(false)
-                            .build())
-                    .status(c.getStatus() != null ? c.getStatus() : CommentStatus.ACTIVE)
-                    .createdAt(c.getCreatedAt())
-                    .updatedAt(c.getUpdatedAt() != null ? c.getUpdatedAt() : c.getCreatedAt())
-                    .replies(replyResponses)
-                    .hasMoreReplies(false)
-                    .nextRepliesCursor(null)
-                    .build());
+        for (FeedComment root : topLevel) {
+            result.add(buildCommentNode(
+                    root,
+                    0,
+                    currentUserId,
+                    userMap,
+                    reactionMap,
+                    childrenByParentId
+            ));
         }
         return result;
+    }
+
+    private CommentItemResponse buildCommentNode(
+            FeedComment comment,
+            int depth,
+            Long currentUserId,
+            Map<Long, User> userMap,
+            Map<Long, FeedCommentReaction> reactionMap,
+            Map<Long, List<FeedComment>> childrenByParentId
+    ) {
+        User author = userMap.get(comment.getUserId());
+        FeedCommentReaction reaction = reactionMap.get(comment.getId());
+
+        CommentReplyToResponse replyTo = null;
+        if (comment.getReplyToUserId() != null) {
+            User replyToUser = userMap.get(comment.getReplyToUserId());
+            replyTo = toCommentReplyTo(replyToUser);
+        }
+
+        // 자식 댓글들 재귀적으로 빌드
+        List<FeedComment> children = childrenByParentId.getOrDefault(comment.getId(), List.of());
+        List<CommentItemResponse> childResponses = children.stream()
+                .sorted(Comparator.comparing(FeedComment::getCreatedAt))
+                .map(child -> buildCommentNode(
+                        child,
+                        depth + 1,
+                        currentUserId,
+                        userMap,
+                        reactionMap,
+                        childrenByParentId
+                ))
+                .toList();
+
+        return CommentItemResponse.builder()
+                .commentId(comment.getId())
+                .parentCommentId(comment.getParentCommentId())
+                .depth(depth)
+                .isMine(currentUserId != null && comment.getUserId().equals(currentUserId))
+                .user(toFeedUserResponse(author))
+                .content(comment.getContent())
+                .replyTo(replyTo)
+                .mentions(List.of())
+                .counts(CommentCountsResponse.builder()
+                        .likeCount(comment.getLikeCount())
+                        .dislikeCount(comment.getDislikeCount())
+                        .replyCount(comment.getCommentCount())
+                        .build())
+                .myState(CommentMyStateResponse.builder()
+                        .reactionType(reaction != null ? reaction.getReactionType() : ReactionType.NONE)
+                        .isBookmarked(false)
+                        .isReposted(false)
+                        .isFollowing(false)
+                        .build())
+                .status(comment.getStatus() != null ? comment.getStatus() : CommentStatus.ACTIVE)
+                .createdAt(comment.getCreatedAt())
+                .updatedAt(comment.getUpdatedAt() != null ? comment.getUpdatedAt() : comment.getCreatedAt())
+                .replies(childResponses)
+                .hasMoreReplies(false)
+                .nextRepliesCursor(null)
+                .build();
     }
 
     private CommentReplyToResponse toCommentReplyTo(User user) {
@@ -505,62 +570,6 @@ public class CommunityFeedService {
                 .userId(user.getLoginId())
                 .name(user.getNickname() != null ? user.getNickname() : user.getName())
                 .build();
-    }
-
-    private List<CommentItemResponse> buildCommentResponsesFlat(List<FeedComment> comments, Long currentUserId) {
-        if (comments.isEmpty()) return List.of();
-
-        List<Long> commentIds = comments.stream().map(FeedComment::getId).toList();
-        Set<Long> authorIds = comments.stream().map(FeedComment::getUserId).collect(Collectors.toSet());
-
-        Map<Long, User> userMap = userRepository.findByIdIn(new ArrayList<>(authorIds)).stream()
-                .collect(Collectors.toMap(User::getId, u -> u));
-
-        Map<Long, FeedCommentReaction> reactionMap =
-                (currentUserId == null)
-                        ? Map.of()
-                        : feedCommentReactionRepository.findByUserIdAndCommentIdIn(currentUserId, commentIds).stream()
-                                .collect(Collectors.toMap(FeedCommentReaction::getCommentId, r -> r));
-
-        Set<Long> replyToUserIds = comments.stream().map(FeedComment::getReplyToUserId).filter(Objects::nonNull).collect(Collectors.toSet());
-        Map<Long, User> replyToUserMap = replyToUserIds.isEmpty() ? Map.of() : userRepository.findByIdIn(new ArrayList<>(replyToUserIds)).stream()
-                .collect(Collectors.toMap(User::getId, u -> u));
-
-        List<CommentItemResponse> result = new ArrayList<>();
-        for (FeedComment c : comments) {
-            User commentAuthor = userMap.get(c.getUserId());
-            FeedCommentReaction reaction = reactionMap.get(c.getId());
-            CommentReplyToResponse replyTo = c.getReplyToUserId() != null ? toCommentReplyTo(replyToUserMap.get(c.getReplyToUserId())) : null;
-
-            result.add(CommentItemResponse.builder()
-                    .commentId(c.getId())
-                    .parentCommentId(c.getParentCommentId())
-                    .depth(1)
-                    .isMine(currentUserId != null && c.getUserId().equals(currentUserId))
-                    .user(toFeedUserResponse(commentAuthor))
-                    .content(c.getContent())
-                    .replyTo(replyTo)
-                    .mentions(List.of())
-                    .counts(CommentCountsResponse.builder()
-                            .likeCount(c.getLikeCount())
-                            .dislikeCount(c.getDislikeCount())
-                            .replyCount(c.getCommentCount())
-                            .build())
-                    .myState(CommentMyStateResponse.builder()
-                            .reactionType(reaction != null ? reaction.getReactionType() : ReactionType.NONE)
-                            .isBookmarked(false)
-                            .isReposted(false)
-                            .isFollowing(false)
-                            .build())
-                    .status(c.getStatus() != null ? c.getStatus() : CommentStatus.ACTIVE)
-                    .createdAt(c.getCreatedAt())
-                    .updatedAt(c.getUpdatedAt() != null ? c.getUpdatedAt() : c.getCreatedAt())
-                    .replies(List.of())
-                    .hasMoreReplies(false)
-                    .nextRepliesCursor(null)
-                    .build());
-        }
-        return result;
     }
 
     @Transactional(readOnly = false)
