@@ -5,7 +5,7 @@ import java.util.List;
 public class FeedPostCreateRequest {
 
     private String content;
-    private String hashTags;
+    private List<String> hashTags;
     private List<ImageMeta> img;
 
     public FeedPostCreateRequest() {
@@ -15,7 +15,7 @@ public class FeedPostCreateRequest {
         return content;
     }
 
-    public String getHashTags() {
+    public List<String> getHashTags() {
         return hashTags;
     }
 
