@@ -17,6 +17,10 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
     @Query("SELECT b.blockerId FROM Block b WHERE b.blockedId = :blockedId AND b.active = true")
     List<Long> findBlockerIdsByBlockedIdAndActiveTrue(@Param("blockedId") Long blockedId);
 
+    /** 내가 차단한 사람(blocked)의 ID 목록. 이 사람들의 게시물은 내 피드에 노출하지 않음. */
+    @Query("SELECT b.blockedId FROM Block b WHERE b.blockerId = :blockerId AND b.active = true")
+    List<Long> findBlockedIdsByBlockerIdAndActiveTrue(@Param("blockerId") Long blockerId);
+
     Optional<Block> findByBlockerIdAndBlockedId(Long blockerId, Long blockedId);
 
     Optional<Block> findByBlockerIdAndBlockedIdAndActiveTrue(Long blockerId, Long blockedId);

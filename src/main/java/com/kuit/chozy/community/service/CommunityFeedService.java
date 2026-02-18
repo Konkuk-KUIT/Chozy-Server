@@ -125,23 +125,29 @@ public class CommunityFeedService {
             if (followingUserIds.isEmpty()) return List.of();
 
             List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
             List<Long> allowedFollowing = followingUserIds.stream()
-                    .filter(id -> !mutedIds.contains(id))
+                    .filter(id -> !mutedIds.contains(id) && !blockedIds.contains(id))
                     .toList();
             if (allowedFollowing.isEmpty()) return List.of();
 
             List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
-            if (blockerIds.isEmpty()) {
+            Set<Long> blockExcludeSet = new HashSet<>(blockerIds);
+            blockExcludeSet.addAll(blockedIds);
+            if (blockExcludeSet.isEmpty()) {
                 return feedRepository.findForFollowingCursor(allowedFollowing, cursorId, contentType, pageable);
             }
-            return feedRepository.findForFollowingCursorExcluding(allowedFollowing, blockerIds, cursorId, contentType, pageable);
+            List<Long> blockExcludeList = new ArrayList<>(blockExcludeSet);
+            return feedRepository.findForFollowingCursorExcluding(allowedFollowing, blockExcludeList, cursorId, contentType, pageable);
         }
 
-        // RECOMMEND: 로그인 시 나를 차단한 사람 + 내가 관심없음한 사람 게시물 제외
+        // RECOMMEND: 로그인 시 나를 차단한 사람 + 내가 차단한 사람 + 내가 관심없음한 사람 게시물 제외
         if (userId != null) {
             List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
             List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
             Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(blockedIds);
             excludeSet.addAll(mutedIds);
             if (!excludeSet.isEmpty()) {
                 List<Long> excludeUserIds = new ArrayList<>(excludeSet);
@@ -163,22 +169,28 @@ public class CommunityFeedService {
             if (followingUserIds.isEmpty()) return List.of();
 
             List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
             List<Long> allowedFollowing = followingUserIds.stream()
-                    .filter(id -> !mutedIds.contains(id))
+                    .filter(id -> !mutedIds.contains(id) && !blockedIds.contains(id))
                     .toList();
             if (allowedFollowing.isEmpty()) return List.of();
 
             List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
-            if (blockerIds.isEmpty()) {
+            Set<Long> blockExcludeSet = new HashSet<>(blockerIds);
+            blockExcludeSet.addAll(blockedIds);
+            if (blockExcludeSet.isEmpty()) {
                 return feedRepository.findForFollowingCursorWithSearch(allowedFollowing, cursorId, contentType, search, pageable);
             }
-            return feedRepository.findForFollowingCursorWithSearchExcluding(allowedFollowing, blockerIds, cursorId, contentType, search, pageable);
+            List<Long> blockExcludeList = new ArrayList<>(blockExcludeSet);
+            return feedRepository.findForFollowingCursorWithSearchExcluding(allowedFollowing, blockExcludeList, cursorId, contentType, search, pageable);
         }
 
         if (userId != null) {
             List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
             List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
             Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(blockedIds);
             excludeSet.addAll(mutedIds);
             if (!excludeSet.isEmpty()) {
                 List<Long> excludeUserIds = new ArrayList<>(excludeSet);
