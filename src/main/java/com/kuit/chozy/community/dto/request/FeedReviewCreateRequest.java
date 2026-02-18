@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class FeedReviewCreateRequest {
 
+    private String title;
     private String content;
     private String vendor;
     private Float rating;
