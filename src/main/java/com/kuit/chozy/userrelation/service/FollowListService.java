@@ -16,9 +16,11 @@ import com.kuit.chozy.userrelation.dto.response.FollowingListResponse;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
 import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -115,12 +117,13 @@ public class FollowListService {
                         return null;
                     }
 
+                    boolean isFollowingByMe = myFollowingSet.contains(followerId);
+                    boolean isFollowingMe = Objects.equals(viewerId, targetUserId);
+
                     FollowStatus myFollowStatus = computeMyFollowStatus(
-                            myFollowingSet.contains(followerId),
+                            isFollowingByMe,
                             pendingRequestSet.contains(followerId)
                     );
-
-                    boolean isFollowing = myFollowingSet.contains(followerId);
 
                     return new FollowerItemResponse(
                             followerId,
@@ -128,8 +131,9 @@ public class FollowListService {
                             u.getNickname(),
                             u.getProfileImageUrl(),
                             Boolean.TRUE.equals(u.getIsAccountPublic()),
-                            isFollowing,
                             myFollowStatus,
+                            isFollowingByMe,
+                            isFollowingMe,
                             blockedSet.contains(followerId),
                             closeFriendSet.contains(followerId),
                             follow.getCreatedAt()
@@ -223,12 +227,12 @@ public class FollowListService {
                         return null;
                     }
 
+                    boolean isFollowingByMe = myFollowingSet.contains(followingId);
+
                     FollowStatus myFollowStatus = computeMyFollowStatus(
-                            myFollowingSet.contains(followingId),
+                            isFollowingByMe,
                             pendingRequestSet.contains(followingId)
                     );
-
-                    boolean isFollowedByMe = myFollowStatus == FollowStatus.FOLLOWING;
 
                     return new FollowingItemResponse(
                             followingId,
@@ -237,7 +241,7 @@ public class FollowListService {
                             u.getProfileImageUrl(),
                             Boolean.TRUE.equals(u.getIsAccountPublic()),
                             myFollowStatus,
-                            isFollowedByMe,
+                            isFollowingByMe,
                             followingMeSet.contains(followingId),
                             blockedSet.contains(followingId),
                             closeFriendSet.contains(followingId),
@@ -271,6 +275,7 @@ public class FollowListService {
                 target.getId(),
                 FollowStatus.FOLLOWING
         );
+
         if (isFollower) {
             return;
         }
@@ -279,13 +284,7 @@ public class FollowListService {
     }
 
     private void validatePage(int page, int size) {
-        if (page < 0) {
-            throw new ApiException(ErrorCode.INVALID_REQUEST);
-        }
-        if (size <= 0) {
-            throw new ApiException(ErrorCode.INVALID_REQUEST);
-        }
-        if (size > 50) {
+        if (page < 0 || size <= 0 || size > 50) {
             throw new ApiException(ErrorCode.INVALID_REQUEST);
         }
     }
