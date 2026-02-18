@@ -7,6 +7,7 @@ import java.util.List;
 @Getter
 public class FeedReviewUpdateRequest {
 
+    private String title;
     private String content;
     private String vendor;
     private Float rating;

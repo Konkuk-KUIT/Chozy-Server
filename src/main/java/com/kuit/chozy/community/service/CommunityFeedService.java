@@ -811,8 +811,17 @@ public class CommunityFeedService {
     }
 
     @Transactional
-    public Long createReviewFeed(Long userId, String content, String vendor, Float rating, String productUrl,
-                                 List<String> imageUrls, List<String> hashTags) {
+    public Long createReviewFeed(
+            Long userId,
+            String title,
+            String content,
+            String vendor,
+            Float rating,
+            String productUrl,
+            List<String> imageUrls,
+            List<String> hashTags
+    ) {
+        if (!StringUtils.hasText(title)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         if (!StringUtils.hasText(content)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         if (!StringUtils.hasText(vendor)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
@@ -820,6 +829,7 @@ public class CommunityFeedService {
                 .userId(userId)
                 .kind(FeedKind.ORIGINAL)
                 .contentType(FeedContentType.REVIEW)
+                .title(title.trim())
                 .content(content.trim())
                 .vendor(vendor.trim())
                 .productUrl(productUrl)
@@ -827,10 +837,9 @@ public class CommunityFeedService {
                 .hashtags(toHashtagsJson(hashTags))
                 .build();
 
-        Feed saved = feedRepository.save(feed);
-
-        return saved.getId();
+        return feedRepository.save(feed).getId();
     }
+
 
     @Transactional
     public Long createRepost(Long userId, Long sourceFeedId) {
@@ -933,28 +942,41 @@ public class CommunityFeedService {
     }
 
     @Transactional
-    public void updateReviewFeed(Long feedId, Long userId, String content, String vendor, Float rating, String productUrl,
-                                 List<String> hashTags, List<String> imageUrls) {
+    public void updateReviewFeed(
+            Long feedId,
+            Long userId,
+            String title,
+            String content,
+            String vendor,
+            Float rating,
+            String productUrl,
+            List<String> hashTags,
+            List<String> imageUrls
+    ) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
 
         if (!feed.getUserId().equals(userId)) throw new ApiException(ErrorCode.FEED_UPDATE_FORBIDDEN);
         if (feed.getKind() != FeedKind.ORIGINAL) throw new ApiException(ErrorCode.FEED_UPDATE_FORBIDDEN);
-
         if (feed.getContentType() != FeedContentType.REVIEW) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-        if (!StringUtils.hasText(content) || !StringUtils.hasText(vendor)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
+        if (!StringUtils.hasText(title)
+                || !StringUtils.hasText(content)
+                || !StringUtils.hasText(vendor)) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        feed.setTitle(title.trim());
         feed.setContent(content.trim());
         feed.setVendor(vendor.trim());
         feed.setProductUrl(productUrl);
         feed.setRating(rating == null ? null : new java.math.BigDecimal(String.valueOf(rating)));
 
-        if (hashTags != null) {
-            feed.setHashtags(toHashtagsJson(hashTags));
-        }
+        if (hashTags != null) feed.setHashtags(toHashtagsJson(hashTags));
 
         feedRepository.save(feed);
     }
+
 
     @Transactional
     public void cancelRepost(Long userId, Long sourceFeedId) {

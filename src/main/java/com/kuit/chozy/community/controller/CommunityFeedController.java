@@ -170,10 +170,15 @@ public class CommunityFeedController {
             @UserId Long userId,
             @RequestBody FeedReviewCreateRequest request
     ) {
-        if (!StringUtils.hasText(request.getContent())) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        if (!StringUtils.hasText(request.getTitle())
+                || !StringUtils.hasText(request.getContent())
+                || !StringUtils.hasText(request.getVendor())) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
 
         Long id = communityFeedService.createReviewFeed(
                 userId,
+                request.getTitle(),
                 request.getContent(),
                 request.getVendor(),
                 request.getRating(),
@@ -184,6 +189,7 @@ public class CommunityFeedController {
 
         return ApiResponse.success(new FeedCreateResponse(id));
     }
+
 
 
     @PatchMapping("/{feedId}/post")
@@ -220,7 +226,9 @@ public class CommunityFeedController {
             @PathVariable Long feedId,
             @RequestBody FeedReviewUpdateRequest request
     ) {
-        if (!StringUtils.hasText(request.getContent()) || !StringUtils.hasText(request.getVendor())) {
+        if (!StringUtils.hasText(request.getTitle())
+                || !StringUtils.hasText(request.getContent())
+                || !StringUtils.hasText(request.getVendor())) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
 
@@ -234,6 +242,7 @@ public class CommunityFeedController {
         communityFeedService.updateReviewFeed(
                 feedId,
                 userId,
+                request.getTitle(),
                 request.getContent(),
                 request.getVendor(),
                 request.getRating(),
