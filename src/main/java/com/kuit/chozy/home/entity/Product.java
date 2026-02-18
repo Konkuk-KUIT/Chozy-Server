@@ -38,6 +38,9 @@ public class Product {
     @Column(name = "discount_rate", nullable = false)
     private Integer discountRate;
 
+    @Column(name = "discounted_price", nullable = false)
+    private Integer discountedPrice;
+
     @Column(name = "product_image_url", length = 2048)
     private String productImageUrl;
 
@@ -47,9 +50,6 @@ public class Product {
 
     @Column(name = "product_url", nullable = false, length = 2048)
     private String productUrl;
-
-    @Column(name = "is_sold_out", nullable = false)
-    private Boolean isSoldOut;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -68,8 +68,8 @@ public class Product {
         this.discountRate = s.getDiscountRate() == null ? 0 : s.getDiscountRate();
         this.productImageUrl = s.getProductImageUrl();
         this.category = s.getCategory();
+        this.discountedPrice = s.getDiscountedPrice() == null ? 0 : s.getDiscountedPrice();
         this.productUrl = s.getProductUrl();
-        this.isSoldOut = Boolean.TRUE.equals(s.getIsSoldOut());
         this.status = ProductStatus.ACTIVE;
         this.updatedAt = LocalDateTime.now();
     }

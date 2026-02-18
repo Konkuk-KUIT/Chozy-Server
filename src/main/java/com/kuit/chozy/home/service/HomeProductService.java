@@ -47,6 +47,9 @@ public class HomeProductService {
 
         int requiredCount = (r.page() + 1) * r.size();
 
+        System.out.println("total=" + page.getTotalElements() + " required=" + requiredCount);
+        System.out.println("willFetchExternal=" + (page.getTotalElements() < requiredCount));
+
         if (page.getTotalElements() < requiredCount) {
             fetchFromExternalAndUpsert(r, requiredCount);
             page = queryDb(r);
@@ -64,8 +67,6 @@ public class HomeProductService {
 
         if (r.minPrice() != null) spec = spec.and(ProductSpecs.priceGte(r.minPrice()));
         if (r.maxPrice() != null) spec = spec.and(ProductSpecs.priceLte(r.maxPrice()));
-        if (r.minRating() != null) spec = spec.and(ProductSpecs.ratingGte(r.minRating()));
-        if (r.maxRating() != null) spec = spec.and(ProductSpecs.ratingLte(r.maxRating()));
 
         Pageable pageable = PageRequest.of(
                 r.page(),
@@ -84,40 +85,71 @@ public class HomeProductService {
         };
     }
 
-
     private void fetchFromExternalAndUpsert(HomeProductsRequest r, long requiredCount) {
-        ExternalProductClient coupang = externalClients.stream()
-                .filter(c -> c.supports() == Vendor.COUPANG)
-                .findFirst()
-                .orElse(null);
 
-        if (coupang == null) return;
-
-        // 현재 DB에 조건에 맞는 총 개수 다시 계산
         long currentTotal = countDb(r);
         if (currentTotal >= requiredCount) return;
 
         long remainingCount = requiredCount - currentTotal;
-
         int limit = (int) Math.min(EXTERNAL_FETCH_MAX_SIZE, currentTotal + remainingCount);
 
-        // request의 size를 외부 호출에 맞게 줄여서 호출 (record니까 "size만 바꾼 새 request" 생성)
         HomeProductsRequest externalReq = new HomeProductsRequest(
                 r.category(),
                 r.search(),
                 r.sort(),
                 r.minPrice(),
                 r.maxPrice(),
-                r.minRating(),
-                r.maxRating(),
-                0,               // 외부는 page 의미 없음
+                0,
                 limit
         );
 
-        List<ProductSnapshot> snaps = coupang.fetch(externalReq);
-        if (snaps == null || snaps.isEmpty()) return;
+        Map<Vendor, List<ProductSnapshot>> snapsByVendor = new LinkedHashMap<>();
 
-        upsertAll(snaps);
+        System.out.println("externalClients size=" + externalClients.size());
+        for (ExternalProductClient client : externalClients) {
+            Vendor v = client.supports();
+            System.out.println("calling external client = " + v);
+
+            List<ProductSnapshot> snaps = client.fetch(externalReq);
+            snapsByVendor.put(v, (snaps == null) ? List.of() : snaps);
+
+            System.out.println("fetched size=" + snapsByVendor.get(v).size() + " from " + v);
+        }
+
+        // 교차로 합치기
+        List<ProductSnapshot> merged = interleave(snapsByVendor, limit);
+
+        if (merged.isEmpty()) return;
+
+        upsertAll(merged);
+    }
+
+    private static List<ProductSnapshot> interleave(
+            Map<Vendor, List<ProductSnapshot>> snapsByVendor,
+            int limit
+    ) {
+        List<List<ProductSnapshot>> lists = new ArrayList<>(snapsByVendor.values());
+        int k = lists.size();
+
+        List<ProductSnapshot> out = new ArrayList<>();
+        int idx = 0;
+
+        while (out.size() < limit) {
+            boolean addedAny = false;
+
+            for (int i = 0; i < k && out.size() < limit; i++) {
+                List<ProductSnapshot> list = lists.get(i);
+                if (idx < list.size()) {
+                    out.add(list.get(idx));
+                    addedAny = true;
+                }
+            }
+
+            if (!addedAny) break;
+            idx++;
+        }
+
+        return out;
     }
 
     private long countDb(HomeProductsRequest r) {
@@ -126,8 +158,6 @@ public class HomeProductService {
         if (r.search() != null && !r.search().isBlank()) spec = spec.and(ProductSpecs.nameContains(r.search()));
         if (r.minPrice() != null) spec = spec.and(ProductSpecs.priceGte(r.minPrice()));
         if (r.maxPrice() != null) spec = spec.and(ProductSpecs.priceLte(r.maxPrice()));
-        if (r.minRating() != null) spec = spec.and(ProductSpecs.ratingGte(r.minRating()));
-        if (r.maxRating() != null) spec = spec.and(ProductSpecs.ratingLte(r.maxRating()));
 
         return productRepository.count(spec);
     }
@@ -144,7 +174,6 @@ public class HomeProductService {
                             .createdAt(LocalDateTime.now())
                             .build());
 
-            // 덮어쓰기 (엔티티에 이런 메서드 만들어두는 걸 추천)
             p.applySnapshot(s);
 
             productRepository.save(p);

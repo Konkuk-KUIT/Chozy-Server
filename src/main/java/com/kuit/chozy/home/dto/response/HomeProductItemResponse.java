@@ -7,6 +7,7 @@ public record HomeProductItemResponse(
         String name,
         Integer originalPrice,
         Integer discountRate,
+        Integer discountedPrice,
         String imageUrl,
         String productUrl,
         boolean isFavorited
@@ -17,6 +18,7 @@ public record HomeProductItemResponse(
                 p.getName(),
                 p.getListPrice(),
                 p.getDiscountRate(),
+                p.getDiscountedPrice(),
                 p.getProductImageUrl(),
                 p.getProductUrl(),
                 isFavorited
