@@ -266,7 +266,11 @@ public class FollowListService {
             return;
         }
 
-        boolean isFollower = followRepository.existsByFollowerIdAndFollowingId(viewerId, target.getId());
+        boolean isFollower = followRepository.existsByFollowerIdAndFollowingIdAndStatus(
+                viewerId,
+                target.getId(),
+                FollowStatus.FOLLOWING
+        );
         if (isFollower) {
             return;
         }

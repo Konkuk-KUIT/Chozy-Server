@@ -67,7 +67,13 @@ public class FollowService {
             throw new ApiException(ErrorCode.CANNOT_FOLLOW_BLOCKED_USER);
         }
 
-        if (followRepository.existsByFollowerIdAndFollowingId(userId, targetUserId)) {
+        boolean alreadyFollowing = followRepository.existsByFollowerIdAndFollowingIdAndStatus(
+                userId,
+                targetUserId,
+                FollowStatus.FOLLOWING
+        );
+
+        if (alreadyFollowing) {
             throw new ApiException(ErrorCode.ALREADY_FOLLOWING);
         }
 
