@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class FeedUserResponse {
+    private Long userPk;
     private String profileImageUrl;
     private String name;
     private String userId; // loginId
