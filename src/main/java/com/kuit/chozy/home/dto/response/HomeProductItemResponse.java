@@ -1,9 +1,11 @@
 package com.kuit.chozy.home.dto.response;
 
 import com.kuit.chozy.home.entity.Product;
+import com.kuit.chozy.home.entity.Vendor;
 
 public record HomeProductItemResponse(
         Long productId,
+        Vendor vendor,
         String name,
         Integer originalPrice,
         Integer discountRate,
@@ -15,6 +17,7 @@ public record HomeProductItemResponse(
     public static HomeProductItemResponse from(Product p, boolean isFavorited) {
         return new HomeProductItemResponse(
                 p.getId(),
+                p.getVendor(),
                 p.getName(),
                 p.getListPrice(),
                 p.getDiscountRate(),
