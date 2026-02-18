@@ -323,12 +323,14 @@ public class CommunityFeedService {
     private FeedUserResponse toFeedUserResponse(User user) {
         if (user == null) {
             return FeedUserResponse.builder()
+                    .userPk(null)
                     .userId("")
                     .name("")
                     .profileImageUrl(null)
                     .build();
         }
         return FeedUserResponse.builder()
+                .userPk(user.getId())
                 .profileImageUrl(user.getProfileImageUrl())
                 .name(user.getNickname() != null ? user.getNickname() : user.getName())
                 .userId(user.getLoginId())
@@ -637,10 +639,16 @@ public class CommunityFeedService {
             replyToUserId = userRepository.findByLoginId(request.getReplyToUserId()).map(User::getId).orElse(null);
         }
 
+        Long parentId = request.getParentCommentId();
+        if (parentId != null && parentId == 0L) {
+            parentId = null;
+        }
+
+
         FeedComment comment = FeedComment.builder()
                 .feedId(feedId)
                 .userId(userId)
-                .parentCommentId(request.getParentCommentId())
+                .parentCommentId(parentId)
                 .content(request.getContent().trim())
                 .mentionName(null)
                 .replyToUserId(replyToUserId)
@@ -652,8 +660,8 @@ public class CommunityFeedService {
         feed.setCommentCount((int) (feed.getCommentCount() + 1));
         feedRepository.save(feed);
 
-        if (request.getParentCommentId() != null) {
-            feedCommentRepository.findById(request.getParentCommentId()).ifPresent(parent -> {
+        if (parentId != null) {
+            feedCommentRepository.findById(parentId).ifPresent(parent -> {
                 parent.setCommentCount(parent.getCommentCount() + 1);
                 feedCommentRepository.save(parent);
             });
@@ -662,7 +670,7 @@ public class CommunityFeedService {
         return CommentCreateResponse.builder()
                 .commentId(comment.getId())
                 .feedId(feedId)
-                .parentCommentId(request.getParentCommentId())
+                .parentCommentId(parentId)
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .build();
