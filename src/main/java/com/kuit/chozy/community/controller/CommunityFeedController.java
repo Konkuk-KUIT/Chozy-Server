@@ -2,6 +2,7 @@ package com.kuit.chozy.community.controller;
 
 import com.kuit.chozy.community.dto.request.*;
 import com.kuit.chozy.community.dto.response.CommentCreateResponse;
+import com.kuit.chozy.community.dto.response.FeedCreateResponse;
 import com.kuit.chozy.community.dto.response.FeedDetailResponse;
 import com.kuit.chozy.community.dto.response.FeedListResultResponse;
 import com.kuit.chozy.community.domain.FeedTab;
@@ -140,7 +141,7 @@ public class CommunityFeedController {
     }
 
     @PostMapping("/post")
-    public ApiResponse<Long> createPostFeed(
+    public ApiResponse<FeedCreateResponse> createPostFeed(
             @UserId Long userId,
             @RequestBody FeedPostCreateRequest request
     ) {
@@ -159,11 +160,12 @@ public class CommunityFeedController {
                 imageUrls,
                 request.getHashTags()
         );
-        return ApiResponse.success(id);
+
+        return ApiResponse.success(new FeedCreateResponse(id));
     }
 
     @PostMapping("/review")
-    public ApiResponse<Long> createReviewFeed(
+    public ApiResponse<FeedCreateResponse> createReviewFeed(
             @UserId Long userId,
             @RequestBody FeedReviewCreateRequest request
     ) {
@@ -178,8 +180,10 @@ public class CommunityFeedController {
                 Collections.emptyList(),
                 null
         );
-        return ApiResponse.success(id);
+
+        return ApiResponse.success(new FeedCreateResponse(id));
     }
+
 
     @PatchMapping("/{feedId}/post")
     public ApiResponse<String> updatePostFeed(
