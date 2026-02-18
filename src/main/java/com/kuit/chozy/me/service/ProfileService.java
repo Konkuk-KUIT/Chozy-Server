@@ -18,6 +18,8 @@ import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
 import com.kuit.chozy.me.dto.response.*;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
+import com.kuit.chozy.userrelation.dto.FollowStatus;
+import com.kuit.chozy.userrelation.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,6 +42,7 @@ public class ProfileService {
 
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
+    private final FollowRepository followRepository;
     private final FeedBookmarkRepository feedBookmarkRepository;
     private final FeedReactionRepository feedReactionRepository;
     private final CommunitySearchHistoryRepository communitySearchHistoryRepository;
@@ -48,7 +51,10 @@ public class ProfileService {
     @Transactional(readOnly = true)
     public ProfileResponseDto getMyProfile(Long userId) {
         User user = getActiveUser(userId);
-        return ProfileResponseDto.from(user);
+        long reviewCount = feedRepository.countByUserId(user.getId());
+        long followerCount = followRepository.countByFollowingIdAndStatus(user.getId(), FollowStatus.FOLLOWING);
+        long followingCount = followRepository.countByFollowerIdAndStatus(user.getId(), FollowStatus.FOLLOWING);
+        return ProfileResponseDto.from(user, reviewCount, followerCount, followingCount);
     }
 
     @Transactional
@@ -88,7 +94,10 @@ public class ProfileService {
         if (request.getIsWeightPublic() != null)
             user.setIsWeightPublic(request.getIsWeightPublic());
 
-        return ProfileResponseDto.from(user);
+        long reviewCount = feedRepository.countByUserId(user.getId());
+        long followerCount = followRepository.countByFollowingIdAndStatus(user.getId(), FollowStatus.FOLLOWING);
+        long followingCount = followRepository.countByFollowerIdAndStatus(user.getId(), FollowStatus.FOLLOWING);
+        return ProfileResponseDto.from(user, reviewCount, followerCount, followingCount);
     }
 
     private static final int MAX_PAGE_SIZE = 50;

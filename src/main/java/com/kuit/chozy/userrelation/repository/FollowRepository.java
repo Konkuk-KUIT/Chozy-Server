@@ -48,6 +48,10 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
             FollowStatus status
     );
 
+    long countByFollowingIdAndStatus(Long followingId, FollowStatus status);
+
+    long countByFollowerIdAndStatus(Long followerId, FollowStatus status);
+
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""

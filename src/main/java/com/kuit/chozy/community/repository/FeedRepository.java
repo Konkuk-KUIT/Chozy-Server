@@ -59,6 +59,8 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
 
     boolean existsByUserIdAndKindAndOriginalFeedId(Long userId, FeedKind kind, Long originalFeedId);
 
+    long countByUserId(Long userId);
+
     Page<Feed> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
 
     Page<Feed> findByUserIdAndContentTypeOrderByCreatedAtDesc(
