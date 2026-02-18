@@ -1,19 +1,21 @@
 package com.kuit.chozy.me.service;
 
+import com.kuit.chozy.community.domain.CommunitySearchHistory;
 import com.kuit.chozy.community.domain.Feed;
 import com.kuit.chozy.community.domain.FeedBookmark;
-import com.kuit.chozy.community.domain.FeedContentType;
+import com.kuit.chozy.community.domain.FeedReaction;
+import com.kuit.chozy.community.domain.ReactionType;
 import com.kuit.chozy.community.dto.response.FeedItemResponse;
+import com.kuit.chozy.community.repository.CommunitySearchHistoryRepository;
 import com.kuit.chozy.community.repository.FeedBookmarkRepository;
+import com.kuit.chozy.community.repository.FeedReactionRepository;
 import com.kuit.chozy.community.repository.FeedRepository;
 import com.kuit.chozy.community.service.CommunityFeedService;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
+import com.kuit.chozy.home.entity.SearchStatus;
 import com.kuit.chozy.me.dto.request.ProfileUpdateDto;
-import com.kuit.chozy.me.dto.response.FeedBookmarkItemResponse;
-import com.kuit.chozy.me.dto.response.MeBookmarksPageResponse;
-import com.kuit.chozy.me.dto.response.MeReviewsPageResponse;
-import com.kuit.chozy.me.dto.response.ProfileResponseDto;
+import com.kuit.chozy.me.dto.response.*;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +41,8 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
     private final FeedBookmarkRepository feedBookmarkRepository;
+    private final FeedReactionRepository feedReactionRepository;
+    private final CommunitySearchHistoryRepository communitySearchHistoryRepository;
     private final CommunityFeedService communityFeedService;
 
     @Transactional(readOnly = true)
@@ -90,21 +94,17 @@ public class ProfileService {
     private static final int MAX_PAGE_SIZE = 50;
 
     @Transactional(readOnly = true)
-    public MeReviewsPageResponse getMyReviews(Long userId, int page, int size, String sort) {
+    public MeFeedsPageResponse getMyFeeds(Long userId, int page, int size, String sort) {
         User user = getActiveUser(userId);
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         Pageable pageable = PageRequest.of(safePage, safeSize);
 
-        Page<Feed> feedPage = feedRepository.findByUserIdAndContentTypeOrderByCreatedAtDesc(
-                user.getId(),
-                FeedContentType.REVIEW,
-                pageable
-        );
+        Page<Feed> feedPage = feedRepository.findByUserIdOrderByCreatedAtDesc(user.getId(), pageable);
 
         List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), userId);
-        return MeReviewsPageResponse.builder()
+        return MeFeedsPageResponse.builder()
                 .feeds(feeds)
                 .page(feedPage.getNumber())
                 .size(feedPage.getSize())
@@ -115,10 +115,10 @@ public class ProfileService {
     }
 
     @Transactional(readOnly = true)
-    public MeReviewsPageResponse searchMyReviews(Long userId, String keyword, int page, int size, String sort) {
+    public MeFeedsPageResponse searchMyFeeds(Long userId, String query, int page, int size, String sort) {
         User user = getActiveUser(userId);
 
-        if (!StringUtils.hasText(keyword)) {
+        if (!StringUtils.hasText(query)) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
 
@@ -128,19 +128,147 @@ public class ProfileService {
 
         Page<Feed> feedPage = feedRepository.findByUserIdAndSearchOrderByCreatedAtDesc(
                 user.getId(),
-                FeedContentType.REVIEW,
-                keyword.trim(),
+                null,
+                query.trim(),
                 pageable
         );
 
         List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), userId);
-        return MeReviewsPageResponse.builder()
+        return MeFeedsPageResponse.builder()
                 .feeds(feeds)
                 .page(feedPage.getNumber())
                 .size(feedPage.getSize())
                 .totalElements(feedPage.getTotalElements())
                 .totalPages(feedPage.getTotalPages())
                 .hasNext(feedPage.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public MeLikedFeedsPageResponse getMyLikedFeeds(Long userId, int page, int size, String sort) {
+        User user = getActiveUser(userId);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<FeedReaction> reactionPage = feedReactionRepository.findByUserIdAndReactionTypeOrderByCreatedAtDesc(
+                user.getId(),
+                ReactionType.LIKE,
+                pageable
+        );
+
+        if (reactionPage.isEmpty()) {
+            return MeLikedFeedsPageResponse.builder()
+                    .feeds(List.of())
+                    .page(reactionPage.getNumber())
+                    .size(reactionPage.getSize())
+                    .totalElements(reactionPage.getTotalElements())
+                    .totalPages(reactionPage.getTotalPages())
+                    .hasNext(reactionPage.hasNext())
+                    .build();
+        }
+
+        List<FeedReaction> reactions = reactionPage.getContent();
+        List<Long> feedIds = reactions.stream().map(FeedReaction::getFeedId).toList();
+
+        Map<Long, Feed> feedMap = feedRepository.findAllById(feedIds).stream()
+                .collect(Collectors.toMap(Feed::getId, f -> f));
+
+        List<FeedLikedItemResponse> feeds = new ArrayList<>();
+        for (FeedReaction reaction : reactions) {
+            Feed feed = feedMap.get(reaction.getFeedId());
+            if (feed == null) continue;
+
+            List<FeedItemResponse> itemList = communityFeedService.toFeedItemResponses(List.of(feed), userId);
+            if (itemList.isEmpty()) continue;
+
+            FeedItemResponse r = itemList.get(0);
+            feeds.add(FeedLikedItemResponse.builder()
+                    .feedId(r.getFeedId())
+                    .kind(r.getKind())
+                    .contentType(r.getContentType())
+                    .createdAt(r.getCreatedAt())
+                    .user(r.getUser())
+                    .contents(r.getContents())
+                    .counts(r.getCounts())
+                    .myState(r.getMyState())
+                    .likedAt(reaction.getCreatedAt())
+                    .build());
+        }
+
+        return MeLikedFeedsPageResponse.builder()
+                .feeds(feeds)
+                .page(reactionPage.getNumber())
+                .size(reactionPage.getSize())
+                .totalElements(reactionPage.getTotalElements())
+                .totalPages(reactionPage.getTotalPages())
+                .hasNext(reactionPage.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public RecentSearchesResponse getRecentSearches(Long userId) {
+        getActiveUser(userId);
+
+        List<CommunitySearchHistory> histories = communitySearchHistoryRepository
+                .findTop10ByUserIdAndStatusOrderByUpdatedAtDesc(userId, SearchStatus.ACTIVE);
+
+        List<RecentSearchItemResponse> searches = histories.stream()
+                .map(h -> RecentSearchItemResponse.builder()
+                        .searchedId(h.getId())
+                        .query(h.getKeyword())
+                        .searchedAt(h.getUpdatedAt())
+                        .build())
+                .toList();
+
+        return RecentSearchesResponse.builder()
+                .searches(searches)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public MeSearchResultResponse searchMyFeedsForMe(Long userId, String query, int page, int size) {
+        MeFeedsPageResponse pageResult = searchMyFeeds(userId, query, page, size, "latest");
+        return MeSearchResultResponse.builder()
+                .query(query)
+                .feeds(pageResult.getFeeds())
+                .build();
+    }
+
+    @Transactional
+    public DeleteSearchResponse deleteSearch(Long userId, Long searchedId) {
+        getActiveUser(userId);
+
+        CommunitySearchHistory history = communitySearchHistoryRepository.findById(searchedId)
+                .orElseThrow(() -> new ApiException(ErrorCode.SEARCH_HISTORY_NOT_FOUND));
+
+        if (!history.getUserId().equals(userId)) {
+            throw new ApiException(ErrorCode.SEARCH_HISTORY_FORBIDDEN);
+        }
+
+        history.delete();
+        communitySearchHistoryRepository.save(history);
+
+        return DeleteSearchResponse.builder()
+                .deletedSearchId(searchedId)
+                .build();
+    }
+
+    @Transactional
+    public DeleteAllSearchesResponse deleteAllSearches(Long userId) {
+        getActiveUser(userId);
+
+        List<CommunitySearchHistory> histories = communitySearchHistoryRepository
+                .findByUserIdAndStatus(userId, SearchStatus.ACTIVE);
+
+        for (CommunitySearchHistory h : histories) {
+            h.delete();
+        }
+        communitySearchHistoryRepository.saveAll(histories);
+
+        return DeleteAllSearchesResponse.builder()
+                .deletedCount(histories.size())
                 .build();
     }
 
