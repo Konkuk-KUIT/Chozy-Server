@@ -113,12 +113,12 @@ public class CommunityFeedController {
     }
 
     @PostMapping("/{feedId}/repost")
-    public ApiResponse<Long> repost(
+    public ApiResponse<FeedCreateResponse> repost(
             @UserId Long userId,
             @PathVariable Long feedId
     ) {
         Long id = communityFeedService.createRepost(userId, feedId);
-        return ApiResponse.success(id);
+        return ApiResponse.success(new FeedCreateResponse(id));
     }
 
     @DeleteMapping("/{feedId}/repost")
@@ -131,14 +131,15 @@ public class CommunityFeedController {
     }
 
     @PostMapping("/{feedId}/quote")
-    public ApiResponse<Long> quote(
+    public ApiResponse<FeedCreateResponse> quote(
             @UserId Long userId,
             @PathVariable Long feedId,
             @RequestBody FeedQuoteCreateRequest request
     ) {
         Long id = communityFeedService.createQuote(userId, feedId, request.getText());
-        return ApiResponse.success(id);
+        return ApiResponse.success(new FeedCreateResponse(id));
     }
+
 
     @PostMapping("/post")
     public ApiResponse<FeedCreateResponse> createPostFeed(
@@ -178,7 +179,7 @@ public class CommunityFeedController {
                 request.getRating(),
                 request.getProductUrl(),
                 Collections.emptyList(),
-                null
+                request.getHashTags()
         );
 
         return ApiResponse.success(new FeedCreateResponse(id));

@@ -154,21 +154,21 @@ public class CommunityFeedService {
                 (currentUserId == null)
                         ? Map.of()
                         : feedReactionRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
-                                .collect(Collectors.toMap(FeedReaction::getFeedId, r -> r));
+                        .collect(Collectors.toMap(FeedReaction::getFeedId, r -> r));
 
         Set<Long> repostedFeedIds =
                 (currentUserId == null)
                         ? Set.of()
                         : feedRepostRepository.findByUserIdAndSourceFeedIdIn(currentUserId, feedIds).stream()
-                                .map(FeedRepost::getSourceFeedId)
-                                .collect(Collectors.toSet());
+                        .map(FeedRepost::getSourceFeedId)
+                        .collect(Collectors.toSet());
 
         Set<Long> bookmarkedFeedIds =
                 (currentUserId == null)
                         ? Set.of()
                         : feedBookmarkRepository.findByUserIdAndFeedIdIn(currentUserId, feedIds).stream()
-                                .map(FeedBookmark::getFeedId)
-                                .collect(Collectors.toSet());
+                        .map(FeedBookmark::getFeedId)
+                        .collect(Collectors.toSet());
 
         Map<Long, List<FeedImage>> feedImagesMap = feedImageRepository.findByFeed_IdIn(feedIds).stream()
                 .collect(Collectors.groupingBy(fi -> fi.getFeed().getId()));
@@ -296,6 +296,23 @@ public class CommunityFeedService {
             return List.of();
         } catch (Exception e) {
             return List.of();
+        }
+    }
+
+    private String toHashtagsJson(List<String> tags) {
+        if (tags == null || tags.isEmpty()) return "[]";
+
+        List<String> normalized = tags.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.writeValueAsString(normalized);
+        } catch (Exception e) {
+            return "[]";
         }
     }
 
@@ -665,7 +682,6 @@ public class CommunityFeedService {
             parentId = null;
         }
 
-
         FeedComment comment = FeedComment.builder()
                 .feedId(feedId)
                 .userId(userId)
@@ -721,7 +737,7 @@ public class CommunityFeedService {
     }
 
     @Transactional
-    public Long createPostFeed(Long userId, String content, List<String> imageUrls, String hashtags) {
+    public Long createPostFeed(Long userId, String content, List<String> imageUrls, List<String> hashTags) {
         if (!StringUtils.hasText(content)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
         Feed feed = Feed.builder()
@@ -729,7 +745,7 @@ public class CommunityFeedService {
                 .kind(FeedKind.ORIGINAL)
                 .contentType(FeedContentType.POST)
                 .content(content.trim())
-                .hashtags((hashtags == null) ? "[]" : hashtags)
+                .hashtags(toHashtagsJson(hashTags))
                 .build();
 
         Feed saved = feedRepository.save(feed);
@@ -739,7 +755,7 @@ public class CommunityFeedService {
 
     @Transactional
     public Long createReviewFeed(Long userId, String content, String vendor, Float rating, String productUrl,
-                                 List<String> imageUrls, String hashtags) {
+                                 List<String> imageUrls, List<String> hashTags) {
         if (!StringUtils.hasText(content)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         if (!StringUtils.hasText(vendor)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
@@ -751,7 +767,7 @@ public class CommunityFeedService {
                 .vendor(vendor.trim())
                 .productUrl(productUrl)
                 .rating(rating == null ? null : new java.math.BigDecimal(String.valueOf(rating)))
-                .hashtags((hashtags == null) ? "[]" : hashtags)
+                .hashtags(toHashtagsJson(hashTags))
                 .build();
 
         Feed saved = feedRepository.save(feed);
@@ -798,7 +814,6 @@ public class CommunityFeedService {
         return saved.getId();
     }
 
-
     @Transactional
     public Long createQuote(Long userId, Long sourceFeedId, String quoteText) {
         Feed source = feedRepository.findById(sourceFeedId)
@@ -835,9 +850,8 @@ public class CommunityFeedService {
         return newId;
     }
 
-
     @Transactional
-    public void updatePostFeed(Long feedId, Long userId, String content, String hashtags, List<String> imageUrls) {
+    public void updatePostFeed(Long feedId, Long userId, String content, List<String> hashTags, List<String> imageUrls) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
 
@@ -854,14 +868,16 @@ public class CommunityFeedService {
             feed.setQuoteText(content.trim());
         }
 
-        if (hashtags != null) feed.setHashtags(hashtags);
+        if (hashTags != null) {
+            feed.setHashtags(toHashtagsJson(hashTags));
+        }
 
         feedRepository.save(feed);
     }
 
     @Transactional
     public void updateReviewFeed(Long feedId, Long userId, String content, String vendor, Float rating, String productUrl,
-                                 String hashtags, List<String> imageUrls) {
+                                 List<String> hashTags, List<String> imageUrls) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
 
@@ -875,7 +891,10 @@ public class CommunityFeedService {
         feed.setVendor(vendor.trim());
         feed.setProductUrl(productUrl);
         feed.setRating(rating == null ? null : new java.math.BigDecimal(String.valueOf(rating)));
-        if (hashtags != null) feed.setHashtags(hashtags);
+
+        if (hashTags != null) {
+            feed.setHashtags(toHashtagsJson(hashTags));
+        }
 
         feedRepository.save(feed);
     }
@@ -900,5 +919,4 @@ public class CommunityFeedService {
         source.setShareCount(Math.max(0, current - 1));
         feedRepository.save(source);
     }
-
 }

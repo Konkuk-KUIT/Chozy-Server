@@ -17,7 +17,7 @@ public class FeedReviewCreateRequest {
     private String vendor;
     private Float rating;
     private String productUrl;
-    private String hashTags;
+    private List<String> hashTags;
     private List<ImageMeta> img;
 
     @Data
