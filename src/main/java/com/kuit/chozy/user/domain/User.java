@@ -52,10 +52,10 @@ public class User {
     private LocalDate birthDate;
 
     @Column
-    private float height; // cm
+    private Float height; // cm
 
     @Column
-    private float weight; // kg
+    private Float weight; // kg
 
     @Column(length = 2048)
     private String profileImageUrl;
@@ -65,16 +65,16 @@ public class User {
 
     // =============== Privacy ===============
     @Column(name = "is_account_public")
-    private boolean isAccountPublic;
+    private Boolean isAccountPublic;
 
     @Column(name = "is_birth_public")
-    private boolean isBirthPublic;
+    private Boolean isBirthPublic;
 
     @Column(name = "is_height_public")
-    private boolean isHeightPublic;
+    private Boolean isHeightPublic;
 
     @Column(name = "is_weight_public")
-    private boolean isWeightPublic;
+    private Boolean isWeightPublic;
 
     // =============== Status ===============
     @Enumerated(EnumType.STRING)

@@ -127,7 +127,7 @@ public class FollowListService {
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
-                            u.isAccountPublic(),
+                            Boolean.TRUE.equals(u.getIsAccountPublic()),
                             isFollowing,
                             myFollowStatus,
                             blockedSet.contains(followerId),
@@ -235,7 +235,7 @@ public class FollowListService {
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
-                            u.isAccountPublic(),
+                            Boolean.TRUE.equals(u.getIsAccountPublic()),
                             myFollowStatus,
                             isFollowedByMe,
                             followingMeSet.contains(followingId),
@@ -258,7 +258,7 @@ public class FollowListService {
     }
 
     private void validateViewPermission(Long viewerId, User target) {
-        if (target.isAccountPublic()) {
+        if (Boolean.TRUE.equals(target.getIsAccountPublic())) {
             return;
         }
 

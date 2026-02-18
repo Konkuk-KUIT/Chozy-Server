@@ -151,7 +151,7 @@ public class BlockService {
                             u.getLoginId(),
                             u.getNickname(),
                             u.getProfileImageUrl(),
-                            u.isAccountPublic(),
+                            Boolean.TRUE.equals(u.getIsAccountPublic()),
                             myFollowStatus,
                             isFollowedByMe,
                             followingMeSet.contains(blockedUserId),
