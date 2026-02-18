@@ -30,8 +30,14 @@ public class UserIdArgumentResolver implements HandlerMethodArgumentResolver {
             NativeWebRequest webRequest,
             WebDataBinderFactory binderFactory) {
         String authHeader = webRequest.getHeader("Authorization");
+        UserId annotation = parameter.getParameterAnnotation(UserId.class);
+        boolean required = annotation == null || annotation.required();
+
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            if (!required) {
+                return null; // 게스트 허용
+            }
             throw new ApiException(ErrorCode.UNAUTHORIZED);
         }
 

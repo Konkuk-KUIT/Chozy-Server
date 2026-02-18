@@ -62,7 +62,7 @@ public class HomeSearchService {
 
         // SearchHistory 저장
         SearchHistory history = searchHistoryRepository.findByUserIdAndKeywordAndStatus(
-                userId, keyword, SearchStatus.ACTIVE
+                userId, normalizedKeyword, SearchStatus.ACTIVE
         ).orElseGet(() -> SearchHistory.create(userId, normalizedKeyword));
 
         history.increaseCount();
