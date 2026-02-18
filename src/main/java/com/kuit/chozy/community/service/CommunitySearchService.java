@@ -115,7 +115,7 @@ public class CommunitySearchService {
 
     @Transactional
     public void deleteRecentSearchKeyword(Long userId, Long historyId) {
-        CommunitySearchHistory history = communitySearchHistoryRepository
+        SearchHistory history = communitySearchHistoryRepository
                 .findByUserIdAndIdAndStatus(userId, historyId, SearchStatus.ACTIVE)
                 .orElseThrow(() -> new IllegalArgumentException("최근 검색어가 없거나 이미 삭제됨"));
 
