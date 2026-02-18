@@ -26,7 +26,7 @@ public class LikeService {
     private final ProductFavoriteRepository productFavoriteRepository;
     private final ProductRepository productRepository;
 
-    public Void likeProduct(Long userId, @NotNull Long productId, @NotNull Boolean like) {
+    public String likeProduct(Long userId, @NotNull Long productId, @NotNull Boolean like) {
         LocalDateTime now = LocalDateTime.now();
 
         ProductFavorite favorite = productFavoriteRepository
@@ -41,12 +41,13 @@ public class LikeService {
 
         if (like) {
             favorite.activate(now);
-        } else  {
+            productFavoriteRepository.save(favorite);
+            return "상품을 찜했어요.";
+        } else {
             favorite.deactivate(now);
+            productFavoriteRepository.save(favorite);
+            return "찜을 해제했어요.";
         }
-
-        productFavoriteRepository.save(favorite);
-        return null;
     }
 
     @Transactional

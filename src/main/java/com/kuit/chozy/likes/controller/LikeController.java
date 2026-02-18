@@ -21,7 +21,7 @@ public class LikeController {
     private final LikeService likeService;
 
     @PostMapping
-    public ApiResponse<Void> likeProduct(
+    public ApiResponse<String> likeProduct(
             @UserId Long userId,
             @RequestBody @Valid LikeRequest request
     ) {
