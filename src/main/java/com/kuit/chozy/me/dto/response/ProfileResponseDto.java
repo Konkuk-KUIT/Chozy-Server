@@ -51,6 +51,26 @@ public class ProfileResponseDto {
                 .build();
     }
 
+    /** 타인 프로필 조회용 (loginId 미노출) */
+    public static ProfileResponseDto fromForOtherUser(User user, long reviewCount, long followerCount, long followingCount) {
+        return ProfileResponseDto.builder()
+                .loginId(null)
+                .nickname(user.getNickname())
+                .profileImageUrl(user.getProfileImageUrl())
+                .statusMessage(user.getStatusMessage())
+                .isAccountPublic(Boolean.TRUE.equals(user.getIsAccountPublic()))
+                .birthDate(user.getBirthDate())
+                .height(user.getHeight() != null ? user.getHeight() : 0f)
+                .weight(user.getWeight() != null ? user.getWeight() : 0f)
+                .isBirthPublic(Boolean.TRUE.equals(user.getIsBirthPublic()))
+                .isHeightPublic(Boolean.TRUE.equals(user.getIsHeightPublic()))
+                .isWeightPublic(Boolean.TRUE.equals(user.getIsWeightPublic()))
+                .reviewCount(reviewCount)
+                .followerCount(followerCount)
+                .followingCount(followingCount)
+                .build();
+    }
+
     public static ProfileResponseDto from(User user, long reviewCount, long followerCount, long followingCount) {
         return ProfileResponseDto.builder()
                 .loginId(user.getLoginId())
