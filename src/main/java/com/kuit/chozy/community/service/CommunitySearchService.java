@@ -10,6 +10,7 @@ import com.kuit.chozy.community.repository.RecentViewedProfileRepository;
 import com.kuit.chozy.home.dto.response.KeywordResponse;
 import com.kuit.chozy.home.dto.response.RecentSearchKeywordResponse;
 import com.kuit.chozy.home.dto.response.RecommendSearchKeywordResponse;
+import com.kuit.chozy.home.entity.SearchHistory;
 import com.kuit.chozy.home.entity.SearchStatus;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.domain.UserStatus;
@@ -17,6 +18,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -109,8 +111,24 @@ public class CommunitySearchService {
                     );
                 })
                 .toList();
+    }
 
+    @Transactional
+    public void deleteRecentSearchKeyword(Long userId, Long historyId) {
+        CommunitySearchHistory history = communitySearchHistoryRepository
+                .findByUserIdAndIdAndStatus(userId, historyId, SearchStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("최근 검색어가 없거나 이미 삭제됨"));
 
+        history.deactivate();
+    }
 
+    @Transactional
+    public void deleteAllRecentSearchKeywords(Long userId) {
+        communitySearchHistoryRepository.deactivateAllByUserId(
+                userId,
+                SearchStatus.ACTIVE,
+                SearchStatus.INACTIVE,
+                LocalDateTime.now()
+        );
     }
 }
