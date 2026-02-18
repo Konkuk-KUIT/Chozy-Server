@@ -68,7 +68,7 @@ public class ProfileService {
             user.setProfileImageUrl(request.getProfileImageUrl());
 
         if (request.getIsAccountPublic() != null)
-            user.setAccountPublic(request.getIsAccountPublic());
+            user.setIsAccountPublic(request.getIsAccountPublic());
 
         if (request.getBirthDate() != null)
             user.setBirthDate(request.getBirthDate());
@@ -80,13 +80,13 @@ public class ProfileService {
             user.setWeight(request.getWeight());
 
         if (request.getIsBirthPublic() != null)
-            user.setBirthPublic(request.getIsBirthPublic());
+            user.setIsBirthPublic(request.getIsBirthPublic());
 
         if (request.getIsHeightPublic() != null)
-            user.setHeightPublic(request.getIsHeightPublic());
+            user.setIsHeightPublic(request.getIsHeightPublic());
 
         if (request.getIsWeightPublic() != null)
-            user.setHeightPublic(request.getIsWeightPublic());
+            user.setIsWeightPublic(request.getIsWeightPublic());
 
         return ProfileResponseDto.from(user);
     }

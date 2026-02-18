@@ -72,7 +72,7 @@ public class FollowService {
         }
 
         // 공개 계정이면 즉시 팔로우
-        if (target.isAccountPublic()) {
+        if (Boolean.TRUE.equals(target.getIsAccountPublic())) {
             Follow follow = new Follow(userId, targetUserId, LocalDateTime.now());
             followRepository.save(follow);
 

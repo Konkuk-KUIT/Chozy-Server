@@ -31,13 +31,13 @@ public class ProfileResponseDto {
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
                 .statusMessage(user.getStatusMessage())
-                .isAccountPublic(user.isAccountPublic())
+                .isAccountPublic(Boolean.TRUE.equals(user.getIsAccountPublic()))
                 .birthDate(user.getBirthDate())
-                .height(user.getHeight())
-                .weight(user.getWeight())
-                .isBirthPublic(user.isBirthPublic())
-                .isHeightPublic(user.isHeightPublic())
-                .isWeightPublic(user.isWeightPublic())
+                .height(user.getHeight() != null ? user.getHeight() : 0f)
+                .weight(user.getWeight() != null ? user.getWeight() : 0f)
+                .isBirthPublic(Boolean.TRUE.equals(user.getIsBirthPublic()))
+                .isHeightPublic(Boolean.TRUE.equals(user.getIsHeightPublic()))
+                .isWeightPublic(Boolean.TRUE.equals(user.getIsWeightPublic()))
                 .build();
     }
 }

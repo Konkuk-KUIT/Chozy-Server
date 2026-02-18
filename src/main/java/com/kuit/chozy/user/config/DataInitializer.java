@@ -84,10 +84,10 @@ public class DataInitializer implements CommandLineRunner {
         admin.setWeight(52f);
         admin.setProfileImageUrl("profile");
         admin.setBackgroundImageUrl("bg");
-        admin.setAccountPublic(true);
-        admin.setBirthPublic(false);
-        admin.setHeightPublic(false);
-        admin.setWeightPublic(false);
+        admin.setIsAccountPublic(true);
+        admin.setIsBirthPublic(false);
+        admin.setIsHeightPublic(false);
+        admin.setIsWeightPublic(false);
         admin.setStatus(UserStatus.ACTIVE);
         admin.setPasswordUpdatedAt(LocalDateTime.now());
 

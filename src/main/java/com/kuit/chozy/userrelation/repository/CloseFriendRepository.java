@@ -24,7 +24,7 @@ public interface CloseFriendRepository extends JpaRepository<CloseFriend, Long> 
                 u.loginId,
                 u.nickname,
                 u.profileImageUrl,
-                u.isAccountPublic,
+                coalesce(u.isAccountPublic, false),
                 cf.setAt
             )
             from CloseFriend cf
