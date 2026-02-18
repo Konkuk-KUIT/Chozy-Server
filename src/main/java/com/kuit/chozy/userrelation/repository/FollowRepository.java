@@ -30,6 +30,25 @@ public interface FollowRepository extends JpaRepository<Follow, Long> {
 
     Optional<Follow> findByFollowerIdAndFollowingId(Long followerId, Long followingId);
 
+    List<Follow> findByFollowerIdAndFollowingIdInAndStatus(
+            Long followerId,
+            List<Long> followingIds,
+            FollowStatus status
+    );
+
+    List<Follow> findByFollowerIdInAndFollowingIdAndStatus(
+            List<Long> followerIds,
+            Long followingId,
+            FollowStatus status
+    );
+
+    boolean existsByFollowerIdAndFollowingIdAndStatus(
+            Long followerId,
+            Long followingId,
+            FollowStatus status
+    );
+
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
         update Follow f

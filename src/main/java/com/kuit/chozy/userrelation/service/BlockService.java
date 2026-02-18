@@ -112,7 +112,7 @@ public class BlockService {
                 .collect(Collectors.toMap(User::getId, Function.identity()));
 
         Set<Long> myFollowingSet = followRepository
-                .findByFollowerIdAndFollowingIdIn(userId, blockedIds)
+                .findByFollowerIdAndFollowingIdInAndStatus(userId, blockedIds, FollowStatus.FOLLOWING)
                 .stream()
                 .map(Follow::getFollowingId)
                 .collect(Collectors.toSet());
@@ -124,7 +124,7 @@ public class BlockService {
                 .collect(Collectors.toSet());
 
         Set<Long> followingMeSet = followRepository
-                .findByFollowerIdInAndFollowingId(blockedIds, userId)
+                .findByFollowerIdInAndFollowingIdAndStatus(blockedIds, userId, FollowStatus.FOLLOWING)
                 .stream()
                 .map(Follow::getFollowerId)
                 .collect(Collectors.toSet());
