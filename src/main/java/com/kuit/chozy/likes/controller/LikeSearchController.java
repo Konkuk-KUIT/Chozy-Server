@@ -1,38 +1,29 @@
-package com.kuit.chozy.home.controller;
+package com.kuit.chozy.likes.controller;
 
 import com.kuit.chozy.global.common.auth.UserId;
 import com.kuit.chozy.global.common.response.ApiResponse;
-import com.kuit.chozy.home.dto.request.SaveSearchKeywordRequest;
-import com.kuit.chozy.home.dto.response.PopularSearchKeywordResponse;
-import com.kuit.chozy.home.dto.response.RecentSearchKeywordResponse;
-import com.kuit.chozy.home.dto.response.RecommendSearchKeywordResponse;
-import com.kuit.chozy.home.service.HomeSearchService;
+import com.kuit.chozy.likes.dto.request.SaveSearchKeywordRequest;
+import com.kuit.chozy.likes.dto.response.RecentSearchKeywordResponse;
+import com.kuit.chozy.likes.dto.response.RecommendSearchKeywordResponse;
+import com.kuit.chozy.likes.service.LikeSearchService;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 @SecurityRequirement(name = "BearerAuth")
 @RestController
-@RequestMapping("/home/searches")
 @RequiredArgsConstructor
-public class HomeSearchController {
+@RequestMapping("/likes/search")
+public class LikeSearchController {
 
-    private final HomeSearchService homeSearchService;
+    private final LikeSearchService likeSearchService;
 
     // 최근 검색어 조회
     @GetMapping("/recent")
     public ApiResponse<RecentSearchKeywordResponse> getRecentSearchKeyword(
             @UserId Long userId
     ){
-        return ApiResponse.success(homeSearchService.getRecentSearchKeyword(userId));
-    }
-
-    // 인기 검색어 조회
-    @GetMapping("/popular")
-    public ApiResponse<List<PopularSearchKeywordResponse>> getPopularSearchKeyword(){
-        return ApiResponse.success(homeSearchService.getPopularSearchKeyword());
+        return ApiResponse.success(likeSearchService.getRecentSearchKeyword(userId));
     }
 
     // 검색어 자동 완성
@@ -40,7 +31,7 @@ public class HomeSearchController {
     public ApiResponse<RecommendSearchKeywordResponse> getRecommendSearchKeyword(
             @RequestParam String keyword
     ){
-        return ApiResponse.success(homeSearchService.getRecommendSearchKeyword(keyword));
+        return ApiResponse.success(likeSearchService.getRecommendSearchKeyword(keyword));
     }
 
     // 검색어 저장
@@ -49,13 +40,7 @@ public class HomeSearchController {
             @UserId Long userId,
             @RequestBody SaveSearchKeywordRequest request
     ){
-        System.out.println("### saveSearchKeyword called ###");
-        System.out.println("userId=" + userId + ", keyword=" + request.keyword());
-
-        if (request == null || request.keyword() == null || request.keyword().isBlank()) {
-            throw new IllegalArgumentException("keyword is required");
-        }
-        homeSearchService.saveSearchKeyword(userId, request.keyword());
+        likeSearchService.saveSearchKeyword(userId, request.keyword());
         return ApiResponse.success(null);
     }
 
@@ -65,7 +50,7 @@ public class HomeSearchController {
             @UserId Long userId,
             @PathVariable("keywordId") Long keywordId
     ){
-        homeSearchService.deleteRecentSearchKeyword(userId, keywordId);
+        likeSearchService.deleteRecentSearchKeyword(userId, keywordId);
         return ApiResponse.success(null);
     }
 
@@ -74,7 +59,7 @@ public class HomeSearchController {
     public ApiResponse<Void> deleteAllRecentSearchKeywords(
             @UserId Long userId
     ){
-        homeSearchService.deleteAllRecentSearchKeywords(userId);
+        likeSearchService.deleteAllRecentSearchKeywords(userId);
         return ApiResponse.success(null);
     }
 }

@@ -9,10 +9,12 @@ import com.kuit.chozy.home.entity.SearchStatus;
 import com.kuit.chozy.home.entity.TrendingCount;
 import com.kuit.chozy.home.repository.SearchHistoryRepository;
 import com.kuit.chozy.home.repository.TrendingCountRepository;
+import com.kuit.chozy.likes.entity.LikeSearchHistory;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -75,5 +77,24 @@ public class HomeSearchService {
 
         tc.increaseDailyCount();
         trendingCountRepository.save(tc);
+    }
+
+    @Transactional
+    public void deleteRecentSearchKeyword(Long userId, Long historyId) {
+        SearchHistory history = searchHistoryRepository
+                .findByUserIdAndIdAndStatus(userId, historyId, SearchStatus.ACTIVE)
+                .orElseThrow(() -> new IllegalArgumentException("최근 검색어가 없거나 이미 삭제됨"));
+
+        history.deactivate();
+    }
+
+    @Transactional
+    public void deleteAllRecentSearchKeywords(Long userId) {
+        searchHistoryRepository.deactivateAllByUserId(
+                userId,
+                SearchStatus.ACTIVE,
+                SearchStatus.INACTIVE,
+                LocalDateTime.now()
+        );
     }
 }

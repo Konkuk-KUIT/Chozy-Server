@@ -75,6 +75,24 @@ public class CommunitySearchController {
         return ApiResponse.success(communitySearchService.getRecentProfiles(userId));
     }
 
+    // 특정 최근 검색어 삭제
+    @DeleteMapping("/recent/{keywordId}")
+    public ApiResponse<Void> deleteRecentSearchKeyword(
+            @UserId Long userId,
+            @PathVariable("keywordId") Long keywordId
+    ){
+        communitySearchService.deleteRecentSearchKeyword(userId, keywordId);
+        return ApiResponse.success(null);
+    }
+
+    // 최근 검색어 전체 삭제
+    @DeleteMapping("/recent")
+    public ApiResponse<Void> deleteAllRecentSearchKeywords(
+            @UserId Long userId
+    ){
+        communitySearchService.deleteAllRecentSearchKeywords(userId);
+        return ApiResponse.success(null);
+    }
 
 
 }

@@ -1,8 +1,7 @@
-package com.kuit.chozy.community.repository;
+package com.kuit.chozy.likes.repository;
 
-import com.kuit.chozy.community.domain.CommunitySearchHistory;
-import com.kuit.chozy.home.entity.SearchHistory;
 import com.kuit.chozy.home.entity.SearchStatus;
+import com.kuit.chozy.likes.entity.LikeSearchHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -14,26 +13,24 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface CommunitySearchHistoryRepository extends JpaRepository<CommunitySearchHistory, Long> {
+public interface LikeSearchHistoryRepository extends JpaRepository<LikeSearchHistory, Long> {
 
-    Optional<CommunitySearchHistory> findByUserIdAndKeywordAndStatus(
+    Optional<LikeSearchHistory> findByUserIdAndKeywordAndStatus(
             Long userId,
             String keyword,
             SearchStatus status
     );
 
-    List<CommunitySearchHistory> findTop10ByUserIdAndStatusOrderByUpdatedAtDesc(
+    List<LikeSearchHistory> findTop10ByUserIdAndStatusOrderByUpdatedAtDesc(
             Long userId,
             SearchStatus status
     );
 
-    List<CommunitySearchHistory> findTop10ByStatusAndKeywordContainingOrderByCountTotalDescUpdatedAtDesc(
+    List<LikeSearchHistory> findTop10ByStatusAndKeywordContainingOrderByCountTotalDescUpdatedAtDesc(
             SearchStatus status, String keyword
     );
 
-    List<CommunitySearchHistory> findByUserIdAndStatus(Long userId, SearchStatus status);
-
-    Optional<SearchHistory> findByUserIdAndIdAndStatus(Long userId, Long id, SearchStatus status);
+    Optional<LikeSearchHistory> findByUserIdAndIdAndStatus(Long userId, Long id, SearchStatus status);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
@@ -45,4 +42,5 @@ public interface CommunitySearchHistoryRepository extends JpaRepository<Communit
                               @Param("active") SearchStatus active,
                               @Param("inactive") SearchStatus inactive,
                               @Param("now") LocalDateTime now);
+
 }
