@@ -55,7 +55,7 @@ jobs:
             KAKAO_CLIENT_SECRET=${{secrets.KAKAO_CLIENT_SECRET}}
             KAKAO_REDIRECT_URI${{secrets.KAKAO_REDIRECT_URI}}
             ALI_APP_KEY=${{secrets.ALI_APP_KEY}}
-            ALI_APP_SECRET=${{ALI_APP_SECRET}}
+            ALI_APP_SECRET=${{secrets.ALI_APP_SECRET}}
             KAKAO_REDIRECT_URI=${{secrets.KAKAO_REDIRECT_URI}}
             NAVER_CLIENT_ID=${{secrets.NAVER_CLIENT_ID}}
             NAVER_CLIENT_SECRET=${{secrets.NAVER_CLIENT_SECRET}}
