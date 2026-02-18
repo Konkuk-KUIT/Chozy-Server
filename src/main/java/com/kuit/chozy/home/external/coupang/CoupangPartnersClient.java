@@ -124,10 +124,8 @@ public class CoupangPartnersClient implements ExternalProductClient {
                 .discountRate(0)
                 .productImageUrl(image)
                 .productUrl(url)
+                .discountedPrice(0)
                 .ratingAvg(0.0)
-                .reviewCount(0)
-                .shippingFee(0)
-                .isSoldOut(false)
                 .build();
     }
 
