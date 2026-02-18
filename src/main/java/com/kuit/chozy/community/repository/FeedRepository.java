@@ -99,6 +99,19 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     @Query("""
     SELECT f FROM Feed f
     WHERE (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+      AND f.userId NOT IN :excludeUserIds
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForRecommendCursorExcluding(
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("excludeUserIds") List<Long> excludeUserIds,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
       AND (LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :search, '%'))
         OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :search, '%'))
         OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :search, '%')))
@@ -111,9 +124,40 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
             Pageable pageable
     );
 
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+      AND f.userId NOT IN :excludeUserIds
+      AND (LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForRecommendCursorWithSearchExcluding(
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("search") String search,
+            @Param("excludeUserIds") List<Long> excludeUserIds,
+            Pageable pageable
+    );
+
     @Query("SELECT f FROM Feed f WHERE f.userId IN :userIds AND (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType) ORDER BY f.id DESC")
     List<Feed> findForFollowingCursor(
             @Param("userIds") List<Long> userIds,
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE f.userId IN :userIds AND f.userId NOT IN :excludeUserIds
+      AND (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForFollowingCursorExcluding(
+            @Param("userIds") List<Long> userIds,
+            @Param("excludeUserIds") List<Long> excludeUserIds,
             @Param("cursorId") Long cursorId,
             @Param("contentType") FeedContentType contentType,
             Pageable pageable
@@ -129,6 +173,24 @@ public interface FeedRepository extends JpaRepository<Feed, Long> {
     """)
     List<Feed> findForFollowingCursorWithSearch(
             @Param("userIds") List<Long> userIds,
+            @Param("cursorId") Long cursorId,
+            @Param("contentType") FeedContentType contentType,
+            @Param("search") String search,
+            Pageable pageable
+    );
+
+    @Query("""
+    SELECT f FROM Feed f
+    WHERE f.userId IN :userIds AND f.userId NOT IN :excludeUserIds
+      AND (:cursorId IS NULL OR f.id < :cursorId) AND (:contentType IS NULL OR f.contentType = :contentType)
+      AND (LOWER(COALESCE(f.content, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.quoteText, '')) LIKE LOWER(CONCAT('%', :search, '%'))
+        OR LOWER(COALESCE(f.vendor, '')) LIKE LOWER(CONCAT('%', :search, '%')))
+    ORDER BY f.id DESC
+    """)
+    List<Feed> findForFollowingCursorWithSearchExcluding(
+            @Param("userIds") List<Long> userIds,
+            @Param("excludeUserIds") List<Long> excludeUserIds,
             @Param("cursorId") Long cursorId,
             @Param("contentType") FeedContentType contentType,
             @Param("search") String search,

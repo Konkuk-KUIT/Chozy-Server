@@ -14,7 +14,9 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
+import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
+import com.kuit.chozy.userrelation.repository.MuteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +45,8 @@ public class CommunityFeedService {
     private final FeedImageRepository feedImageRepository;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
+    private final BlockRepository blockRepository;
+    private final MuteRepository muteRepository;
 
     public FeedListResultResponse getFeeds(
             Long userId,
@@ -111,34 +115,75 @@ public class CommunityFeedService {
 
     private List<Feed> getFeedsWithoutSearchCursor(FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
-            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
             if (userId == null) {
                 return List.of();
             }
-
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
                     .toList();
             if (followingUserIds.isEmpty()) return List.of();
-            return feedRepository.findForFollowingCursor(followingUserIds, cursorId, contentType, pageable);
+
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> allowedFollowing = followingUserIds.stream()
+                    .filter(id -> !mutedIds.contains(id))
+                    .toList();
+            if (allowedFollowing.isEmpty()) return List.of();
+
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            if (blockerIds.isEmpty()) {
+                return feedRepository.findForFollowingCursor(allowedFollowing, cursorId, contentType, pageable);
+            }
+            return feedRepository.findForFollowingCursorExcluding(allowedFollowing, blockerIds, cursorId, contentType, pageable);
+        }
+
+        // RECOMMEND: 로그인 시 나를 차단한 사람 + 내가 관심없음한 사람 게시물 제외
+        if (userId != null) {
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(mutedIds);
+            if (!excludeSet.isEmpty()) {
+                List<Long> excludeUserIds = new ArrayList<>(excludeSet);
+                return feedRepository.findForRecommendCursorExcluding(cursorId, contentType, excludeUserIds, pageable);
+            }
         }
         return feedRepository.findForRecommendCursor(cursorId, contentType, pageable);
     }
 
     private List<Feed> getFeedsBySearchCursor(String search, FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
-            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
             if (userId == null) {
                 return List.of();
             }
-
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
                     .toList();
             if (followingUserIds.isEmpty()) return List.of();
-            return feedRepository.findForFollowingCursorWithSearch(followingUserIds, cursorId, contentType, search, pageable);
+
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> allowedFollowing = followingUserIds.stream()
+                    .filter(id -> !mutedIds.contains(id))
+                    .toList();
+            if (allowedFollowing.isEmpty()) return List.of();
+
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            if (blockerIds.isEmpty()) {
+                return feedRepository.findForFollowingCursorWithSearch(allowedFollowing, cursorId, contentType, search, pageable);
+            }
+            return feedRepository.findForFollowingCursorWithSearchExcluding(allowedFollowing, blockerIds, cursorId, contentType, search, pageable);
+        }
+
+        if (userId != null) {
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(mutedIds);
+            if (!excludeSet.isEmpty()) {
+                List<Long> excludeUserIds = new ArrayList<>(excludeSet);
+                return feedRepository.findForRecommendCursorWithSearchExcluding(cursorId, contentType, search, excludeUserIds, pageable);
+            }
         }
         return feedRepository.findForRecommendCursorWithSearch(cursorId, contentType, search, pageable);
     }
