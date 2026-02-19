@@ -11,6 +11,7 @@ import com.kuit.chozy.community.repository.FeedBookmarkRepository;
 import com.kuit.chozy.community.repository.FeedReactionRepository;
 import com.kuit.chozy.community.repository.FeedRepository;
 import com.kuit.chozy.community.service.CommunityFeedService;
+import com.kuit.chozy.community.service.CommunitySearchService;
 import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.home.entity.SearchStatus;
@@ -49,6 +50,7 @@ public class ProfileService {
     private final FeedReactionRepository feedReactionRepository;
     private final CommunitySearchHistoryRepository communitySearchHistoryRepository;
     private final CommunityFeedService communityFeedService;
+    private final CommunitySearchService communitySearchService;
 
     @Transactional(readOnly = true)
     public ProfileResponseDto getMyProfile(Long userId) {
@@ -221,13 +223,16 @@ public class ProfileService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
+    /** 마이피드 검색 (호출 시 검색어가 검색 기록에 저장됨) */
+    @Transactional
     public MeFeedsPageResponse searchMyFeeds(Long userId, String query, int page, int size, String sort) {
         User user = getActiveUser(userId);
 
         if (!StringUtils.hasText(query)) {
             throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         }
+
+        communitySearchService.saveSearchKeyword(userId, query.trim());
 
         int safePage = Math.max(page, 0);
         int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
