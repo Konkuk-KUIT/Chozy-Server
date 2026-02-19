@@ -2,7 +2,7 @@
 
 ### ERD & architecture & 명세서  
 #### ERD
-- 
+- https://www.erdcloud.com/d/MZg49bAzHsqyKfmrX
 #### swagger / notion
 - https://chozy.net/swagger-ui/index.html
 - https://telling-stoat-1de.notion.site/2d1113bcf43a80919e9ced168ab6e7a3?source=copy_link
