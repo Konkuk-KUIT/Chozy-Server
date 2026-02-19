@@ -1,5 +1,10 @@
 ## Chozy BE Repository
 
+### ERD & architecture & Swagger 
+- https://www.erdcloud.com/d/NvRL5YdCfho3KRWs5
+- https://chozy.net/swagger-ui/index.html
+- <img width="500" height="500" alt="server_architecture" src="https://github.com/user-attachments/assets/efc78979-1a62-4fce-b852-fd7837d9ec56" />
+
 ### Info
 - Java 17, Spring boot 3.4.1, JPA
 - DB: MySQL
