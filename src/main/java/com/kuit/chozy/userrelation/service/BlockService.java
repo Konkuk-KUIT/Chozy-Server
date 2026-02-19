@@ -56,7 +56,7 @@ public class BlockService {
                 .findByBlockerIdAndBlockedId(userId, targetUserId)
                 .orElseGet(() -> new Block(userId, targetUserId));
 
-        // 멱등 처리 + blockedAt 갱신
+        // 멱등 처리 + CreatedAt 갱신
         block.activate();
 
         Block saved = blockRepository.save(block);
@@ -87,11 +87,11 @@ public class BlockService {
         Pageable pageable = PageRequest.of(
                 page,
                 size,
-                Sort.by("blockedAt").descending()
+                Sort.by("createdAt").descending()
         );
 
         Page<Block> blockPage =
-                blockRepository.findByBlockerIdAndActiveTrueOrderByBlockedAtDesc(userId, pageable);
+                blockRepository.findByBlockerIdAndActiveTrueOrderByCreatedAtDesc(userId, pageable);
 
         if (blockPage.isEmpty()) {
             return new BlockedUserListResponse(

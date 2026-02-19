@@ -125,7 +125,6 @@ public class AuthService {
         UserToken token = userTokenRepository.findByRefreshTokenAndStatus(refreshToken, TokenStatus.ACTIVE)
                 .orElseThrow(() -> new ApiException(ErrorCode.INVALID_REFRESH_TOKEN));
 
-        /* TODO: token.getId() vs token.getUserId() 확인 필요 */
         if (!token.getUserId().equals(userId)) {
             throw new ApiException(ErrorCode.INVALID_REFRESH_TOKEN);
         }
