@@ -1,7 +1,12 @@
 ## Chozy BE Repository
 
-### ERD & architecture & Swagger 
+### ERD & architecture & 명세서  
+#### ERD
+- 
+#### swagger / notion
 - https://chozy.net/swagger-ui/index.html
+- https://telling-stoat-1de.notion.site/2d1113bcf43a80919e9ced168ab6e7a3?source=copy_link
+#### Server Architecture
 <img width="500" height="500" alt="server_architecture" src="https://github.com/user-attachments/assets/efc78979-1a62-4fce-b852-fd7837d9ec56" />
 
 ### Info
