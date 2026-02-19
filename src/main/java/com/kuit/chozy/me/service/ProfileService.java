@@ -20,6 +20,7 @@ import com.kuit.chozy.me.dto.response.*;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
 import com.kuit.chozy.userrelation.dto.FollowStatus;
+import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class ProfileService {
     private final UserRepository userRepository;
     private final FeedRepository feedRepository;
     private final FollowRepository followRepository;
+    private final BlockRepository blockRepository;
     private final FeedBookmarkRepository feedBookmarkRepository;
     private final FeedReactionRepository feedReactionRepository;
     private final CommunitySearchHistoryRepository communitySearchHistoryRepository;
@@ -103,6 +105,102 @@ public class ProfileService {
     }
 
     private static final int MAX_PAGE_SIZE = 50;
+
+    /** 타인 조회 시 차단 관계만 검증 (프로필은 비공개여도 닉네임·게시글 수·팔로워/팔로잉 등 노출) */
+    private void validateBlockRelation(Long viewerId, Long targetUserId) {
+        if (viewerId.equals(targetUserId)) {
+            return;
+        }
+        if (blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(viewerId, targetUserId)
+                || blockRepository.existsByBlockerIdAndBlockedIdAndActiveTrue(targetUserId, viewerId)) {
+            throw new ApiException(ErrorCode.BLOCK_RELATION_EXISTS);
+        }
+    }
+
+    /** 타인 피드/검색 조회 시 차단 + 비공개 검증 (비공개 계정은 팔로우한 경우에만 피드 노출) */
+    private void validateTargetFeedAccess(Long viewerId, Long targetUserId, User targetUser) {
+        validateBlockRelation(viewerId, targetUserId);
+        if (viewerId.equals(targetUserId)) {
+            return;
+        }
+        if (Boolean.FALSE.equals(targetUser.getIsAccountPublic())) {
+            boolean following = followRepository.existsByFollowerIdAndFollowingIdAndStatus(
+                    viewerId, targetUserId, FollowStatus.FOLLOWING);
+            if (!following) {
+                throw new ApiException(ErrorCode.PRIVATE_ACCOUNT_FORBIDDEN);
+            }
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public ProfileResponseDto getTargetProfile(Long viewerId, Long targetUserId) {
+        if (viewerId.equals(targetUserId)) {
+            return getMyProfile(targetUserId);
+        }
+        User targetUser = getActiveUser(targetUserId);
+        validateBlockRelation(viewerId, targetUserId);
+        long reviewCount = feedRepository.countByUserId(targetUser.getId());
+        long followerCount = followRepository.countByFollowingIdAndStatus(targetUser.getId(), FollowStatus.FOLLOWING);
+        long followingCount = followRepository.countByFollowerIdAndStatus(targetUser.getId(), FollowStatus.FOLLOWING);
+        return ProfileResponseDto.fromForOtherUser(targetUser, reviewCount, followerCount, followingCount);
+    }
+
+    @Transactional(readOnly = true)
+    public MeFeedsPageResponse getTargetFeeds(Long viewerId, Long targetUserId, int page, int size, String sort) {
+        if (viewerId.equals(targetUserId)) {
+            return getMyFeeds(targetUserId, page, size, sort);
+        }
+        User targetUser = getActiveUser(targetUserId);
+        validateTargetFeedAccess(viewerId, targetUserId, targetUser);
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<Feed> feedPage = feedRepository.findByUserIdOrderByCreatedAtDesc(targetUser.getId(), pageable);
+        List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), viewerId);
+        return MeFeedsPageResponse.builder()
+                .feeds(feeds)
+                .page(feedPage.getNumber())
+                .size(feedPage.getSize())
+                .totalElements(feedPage.getTotalElements())
+                .totalPages(feedPage.getTotalPages())
+                .hasNext(feedPage.hasNext())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public MeFeedsPageResponse searchTargetFeeds(Long viewerId, Long targetUserId, String query, int page, int size, String sort) {
+        if (viewerId.equals(targetUserId)) {
+            return searchMyFeeds(targetUserId, query, page, size, sort);
+        }
+        User targetUser = getActiveUser(targetUserId);
+        validateTargetFeedAccess(viewerId, targetUserId, targetUser);
+
+        if (!StringUtils.hasText(query)) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+
+        Page<Feed> feedPage = feedRepository.findByUserIdAndSearchOrderByCreatedAtDesc(
+                targetUser.getId(),
+                null,
+                query.trim(),
+                pageable
+        );
+        List<FeedItemResponse> feeds = communityFeedService.toFeedItemResponses(feedPage.getContent(), viewerId);
+        return MeFeedsPageResponse.builder()
+                .feeds(feeds)
+                .page(feedPage.getNumber())
+                .size(feedPage.getSize())
+                .totalElements(feedPage.getTotalElements())
+                .totalPages(feedPage.getTotalPages())
+                .hasNext(feedPage.hasNext())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public MeFeedsPageResponse getMyFeeds(Long userId, int page, int size, String sort) {

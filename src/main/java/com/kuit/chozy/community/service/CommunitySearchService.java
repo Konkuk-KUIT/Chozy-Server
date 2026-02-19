@@ -77,7 +77,7 @@ public class CommunitySearchService {
                         UserStatus.ACTIVE, normalizedLoginId
                 )
                         .stream()
-                        .map(u -> new UserLoginIdRecommendResponse(u.getLoginId(), u.getProfileImageUrl()))
+                        .map(u -> new UserLoginIdRecommendResponse(u.getId(), u.getLoginId(), u.getProfileImageUrl()))
                         .toList();
     }
 

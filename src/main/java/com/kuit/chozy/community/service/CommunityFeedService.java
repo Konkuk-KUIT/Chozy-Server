@@ -14,7 +14,12 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
+import com.kuit.chozy.userrelation.dto.FollowStatus;
+import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
+import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
+import com.kuit.chozy.userrelation.domain.FollowRequestStatus;
+import com.kuit.chozy.userrelation.repository.MuteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +48,9 @@ public class CommunityFeedService {
     private final FeedImageRepository feedImageRepository;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
+    private final FollowRequestRepository followRequestRepository;
+    private final BlockRepository blockRepository;
+    private final MuteRepository muteRepository;
 
     public FeedListResultResponse getFeeds(
             Long userId,
@@ -111,34 +119,87 @@ public class CommunityFeedService {
 
     private List<Feed> getFeedsWithoutSearchCursor(FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
-            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
             if (userId == null) {
                 return List.of();
             }
-
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
                     .toList();
             if (followingUserIds.isEmpty()) return List.of();
-            return feedRepository.findForFollowingCursor(followingUserIds, cursorId, contentType, pageable);
+
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
+            List<Long> allowedFollowing = followingUserIds.stream()
+                    .filter(id -> !mutedIds.contains(id) && !blockedIds.contains(id))
+                    .toList();
+            if (allowedFollowing.isEmpty()) return List.of();
+
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            Set<Long> blockExcludeSet = new HashSet<>(blockerIds);
+            blockExcludeSet.addAll(blockedIds);
+            if (blockExcludeSet.isEmpty()) {
+                return feedRepository.findForFollowingCursor(allowedFollowing, cursorId, contentType, pageable);
+            }
+            List<Long> blockExcludeList = new ArrayList<>(blockExcludeSet);
+            return feedRepository.findForFollowingCursorExcluding(allowedFollowing, blockExcludeList, cursorId, contentType, pageable);
+        }
+
+        // RECOMMEND: 로그인 시 나를 차단한 사람 + 내가 차단한 사람 + 내가 관심없음한 사람 게시물 제외
+        if (userId != null) {
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(blockedIds);
+            excludeSet.addAll(mutedIds);
+            if (!excludeSet.isEmpty()) {
+                List<Long> excludeUserIds = new ArrayList<>(excludeSet);
+                return feedRepository.findForRecommendCursorExcluding(cursorId, contentType, excludeUserIds, pageable);
+            }
         }
         return feedRepository.findForRecommendCursor(cursorId, contentType, pageable);
     }
 
     private List<Feed> getFeedsBySearchCursor(String search, FeedTab tab, FeedContentType contentType, Long userId, Long cursorId, Pageable pageable) {
         if (tab == FeedTab.FOLLOWING) {
-            // 비로그인 사용자는 FOLLOWING 탭을 사용할 수 없음 -> 빈 리스트 반환
             if (userId == null) {
                 return List.of();
             }
-
             List<Long> followingUserIds = followRepository.findByFollowerId(userId, Pageable.unpaged())
                     .getContent().stream()
                     .map(f -> f.getFollowingId())
                     .toList();
             if (followingUserIds.isEmpty()) return List.of();
-            return feedRepository.findForFollowingCursorWithSearch(followingUserIds, cursorId, contentType, search, pageable);
+
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
+            List<Long> allowedFollowing = followingUserIds.stream()
+                    .filter(id -> !mutedIds.contains(id) && !blockedIds.contains(id))
+                    .toList();
+            if (allowedFollowing.isEmpty()) return List.of();
+
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            Set<Long> blockExcludeSet = new HashSet<>(blockerIds);
+            blockExcludeSet.addAll(blockedIds);
+            if (blockExcludeSet.isEmpty()) {
+                return feedRepository.findForFollowingCursorWithSearch(allowedFollowing, cursorId, contentType, search, pageable);
+            }
+            List<Long> blockExcludeList = new ArrayList<>(blockExcludeSet);
+            return feedRepository.findForFollowingCursorWithSearchExcluding(allowedFollowing, blockExcludeList, cursorId, contentType, search, pageable);
+        }
+
+        if (userId != null) {
+            List<Long> blockerIds = blockRepository.findBlockerIdsByBlockedIdAndActiveTrue(userId);
+            List<Long> blockedIds = blockRepository.findBlockedIdsByBlockerIdAndActiveTrue(userId);
+            List<Long> mutedIds = muteRepository.findMutedIdsByMuterIdAndActiveTrue(userId);
+            Set<Long> excludeSet = new HashSet<>(blockerIds);
+            excludeSet.addAll(blockedIds);
+            excludeSet.addAll(mutedIds);
+            if (!excludeSet.isEmpty()) {
+                List<Long> excludeUserIds = new ArrayList<>(excludeSet);
+                return feedRepository.findForRecommendCursorWithSearchExcluding(cursorId, contentType, search, excludeUserIds, pageable);
+            }
         }
         return feedRepository.findForRecommendCursorWithSearch(cursorId, contentType, search, pageable);
     }
@@ -252,8 +313,10 @@ public class CommunityFeedService {
             ReactionType reactionType = reaction != null ? reaction.getReactionType() : ReactionType.NONE;
 
             boolean isFollowing = false;
+            FollowStatus followStatus = FollowStatus.NONE;
             if (currentUserId != null && !currentUserId.equals(feed.getUserId())) {
-                isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, feed.getUserId());
+                isFollowing = followRepository.existsByFollowerIdAndFollowingIdAndStatus(currentUserId, feed.getUserId(), FollowStatus.FOLLOWING);
+                followStatus = isFollowing ? FollowStatus.FOLLOWING : FollowStatus.NONE;
             }
 
             FeedMyStateResponse myState = FeedMyStateResponse.builder()
@@ -261,6 +324,7 @@ public class CommunityFeedService {
                     .isBookmarked(bookmarkedFeedIds.contains(feed.getId()))
                     .isReposted(repostedFeedIds.contains(feed.getId()))
                     .isFollowing(isFollowing)
+                    .followStatus(followStatus)
                     .build();
 
             result.add(FeedItemResponse.builder()
@@ -415,6 +479,7 @@ public class CommunityFeedService {
         boolean isBookmarked = false;
         boolean isReposted = false;
         boolean isFollowing = false;
+        FollowStatus followStatus = FollowStatus.NONE;
 
         if (userId != null) {
             feedReaction = feedReactionRepository.findByUserIdAndFeedId(userId, feedId).orElse(null);
@@ -425,7 +490,9 @@ public class CommunityFeedService {
             isReposted = feedRepostRepository.existsByUserIdAndSourceFeedId(userId, feedId);
 
             if (!userId.equals(feed.getUserId())) {
-                isFollowing = followRepository.existsByFollowerIdAndFollowingId(userId, feed.getUserId());
+                isFollowing = followRepository.existsByFollowerIdAndFollowingIdAndStatus(userId, feed.getUserId(), FollowStatus.FOLLOWING);
+                boolean isRequested = followRequestRepository.existsByRequesterIdAndTargetIdAndStatus(userId, feed.getUserId(), FollowRequestStatus.PENDING);
+                followStatus = isFollowing ? FollowStatus.FOLLOWING : (isRequested ? FollowStatus.REQUESTED : FollowStatus.NONE);
             }
         }
 
@@ -434,6 +501,7 @@ public class CommunityFeedService {
                 .isBookmarked(isBookmarked)
                 .isReposted(isReposted)
                 .isFollowing(isFollowing)
+                .followStatus(followStatus)
                 .build();
 
         FeedDetailFeedResponse feedDetail = FeedDetailFeedResponse.builder()
@@ -754,8 +822,17 @@ public class CommunityFeedService {
     }
 
     @Transactional
-    public Long createReviewFeed(Long userId, String content, String vendor, Float rating, String productUrl,
-                                 List<String> imageUrls, List<String> hashTags) {
+    public Long createReviewFeed(
+            Long userId,
+            String title,
+            String content,
+            String vendor,
+            Float rating,
+            String productUrl,
+            List<String> imageUrls,
+            List<String> hashTags
+    ) {
+        if (!StringUtils.hasText(title)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         if (!StringUtils.hasText(content)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
         if (!StringUtils.hasText(vendor)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
@@ -763,6 +840,7 @@ public class CommunityFeedService {
                 .userId(userId)
                 .kind(FeedKind.ORIGINAL)
                 .contentType(FeedContentType.REVIEW)
+                .title(title.trim())
                 .content(content.trim())
                 .vendor(vendor.trim())
                 .productUrl(productUrl)
@@ -770,10 +848,9 @@ public class CommunityFeedService {
                 .hashtags(toHashtagsJson(hashTags))
                 .build();
 
-        Feed saved = feedRepository.save(feed);
-
-        return saved.getId();
+        return feedRepository.save(feed).getId();
     }
+
 
     @Transactional
     public Long createRepost(Long userId, Long sourceFeedId) {
@@ -791,7 +868,7 @@ public class CommunityFeedService {
         Feed repostFeed = Feed.builder()
                 .userId(userId)
                 .kind(FeedKind.REPOST)
-                .contentType(source.getContentType())
+                .contentType(FeedContentType.POST)
                 .originalFeedId(sourceFeedId)
                 .content(null)
                 .hashtags("[]")
@@ -876,28 +953,41 @@ public class CommunityFeedService {
     }
 
     @Transactional
-    public void updateReviewFeed(Long feedId, Long userId, String content, String vendor, Float rating, String productUrl,
-                                 List<String> hashTags, List<String> imageUrls) {
+    public void updateReviewFeed(
+            Long feedId,
+            Long userId,
+            String title,
+            String content,
+            String vendor,
+            Float rating,
+            String productUrl,
+            List<String> hashTags,
+            List<String> imageUrls
+    ) {
         Feed feed = feedRepository.findById(feedId)
                 .orElseThrow(() -> new ApiException(ErrorCode.FEED_NOT_FOUND));
 
         if (!feed.getUserId().equals(userId)) throw new ApiException(ErrorCode.FEED_UPDATE_FORBIDDEN);
         if (feed.getKind() != FeedKind.ORIGINAL) throw new ApiException(ErrorCode.FEED_UPDATE_FORBIDDEN);
-
         if (feed.getContentType() != FeedContentType.REVIEW) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
-        if (!StringUtils.hasText(content) || !StringUtils.hasText(vendor)) throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
 
+        if (!StringUtils.hasText(title)
+                || !StringUtils.hasText(content)
+                || !StringUtils.hasText(vendor)) {
+            throw new ApiException(ErrorCode.INVALID_REQUEST_VALUE);
+        }
+
+        feed.setTitle(title.trim());
         feed.setContent(content.trim());
         feed.setVendor(vendor.trim());
         feed.setProductUrl(productUrl);
         feed.setRating(rating == null ? null : new java.math.BigDecimal(String.valueOf(rating)));
 
-        if (hashTags != null) {
-            feed.setHashtags(toHashtagsJson(hashTags));
-        }
+        if (hashTags != null) feed.setHashtags(toHashtagsJson(hashTags));
 
         feedRepository.save(feed);
     }
+
 
     @Transactional
     public void cancelRepost(Long userId, Long sourceFeedId) {
