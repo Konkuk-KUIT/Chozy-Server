@@ -8,11 +8,13 @@ import com.kuit.chozy.likes.dto.response.LikeItemResponse;
 import com.kuit.chozy.likes.dto.response.LikeListResult;
 import com.kuit.chozy.likes.entity.ProductFavorite;
 import com.kuit.chozy.likes.service.LikeService;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
 
+@SecurityRequirement(name = "BearerAuth")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/likes")
