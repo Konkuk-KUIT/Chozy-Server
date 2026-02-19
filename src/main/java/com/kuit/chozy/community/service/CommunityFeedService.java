@@ -857,7 +857,7 @@ public class CommunityFeedService {
         Feed repostFeed = Feed.builder()
                 .userId(userId)
                 .kind(FeedKind.REPOST)
-                .contentType(source.getContentType())
+                .contentType(FeedContentType.POST)
                 .originalFeedId(sourceFeedId)
                 .content(null)
                 .hashtags("[]")
