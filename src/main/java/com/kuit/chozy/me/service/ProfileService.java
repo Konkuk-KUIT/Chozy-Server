@@ -339,7 +339,8 @@ public class ProfileService {
                 .build();
     }
 
-    @Transactional(readOnly = true)
+    /** GET /me/searches 검색 (호출 시 검색어가 검색 기록에 저장되어 /me/searches/recent에 반영됨) */
+    @Transactional
     public MeSearchResultResponse searchMyFeedsForMe(Long userId, String query, int page, int size) {
         MeFeedsPageResponse pageResult = searchMyFeeds(userId, query, page, size, "latest");
         return MeSearchResultResponse.builder()
