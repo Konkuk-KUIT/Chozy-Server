@@ -14,8 +14,11 @@ import com.kuit.chozy.global.common.exception.ApiException;
 import com.kuit.chozy.global.common.exception.ErrorCode;
 import com.kuit.chozy.user.domain.User;
 import com.kuit.chozy.user.repository.UserRepository;
+import com.kuit.chozy.userrelation.dto.FollowStatus;
 import com.kuit.chozy.userrelation.repository.BlockRepository;
 import com.kuit.chozy.userrelation.repository.FollowRepository;
+import com.kuit.chozy.userrelation.repository.FollowRequestRepository;
+import com.kuit.chozy.userrelation.domain.FollowRequestStatus;
 import com.kuit.chozy.userrelation.repository.MuteRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -45,6 +48,7 @@ public class CommunityFeedService {
     private final FeedImageRepository feedImageRepository;
     private final UserRepository userRepository;
     private final FollowRepository followRepository;
+    private final FollowRequestRepository followRequestRepository;
     private final BlockRepository blockRepository;
     private final MuteRepository muteRepository;
 
@@ -309,8 +313,10 @@ public class CommunityFeedService {
             ReactionType reactionType = reaction != null ? reaction.getReactionType() : ReactionType.NONE;
 
             boolean isFollowing = false;
+            FollowStatus followStatus = FollowStatus.NONE;
             if (currentUserId != null && !currentUserId.equals(feed.getUserId())) {
-                isFollowing = followRepository.existsByFollowerIdAndFollowingId(currentUserId, feed.getUserId());
+                isFollowing = followRepository.existsByFollowerIdAndFollowingIdAndStatus(currentUserId, feed.getUserId(), FollowStatus.FOLLOWING);
+                followStatus = isFollowing ? FollowStatus.FOLLOWING : FollowStatus.NONE;
             }
 
             FeedMyStateResponse myState = FeedMyStateResponse.builder()
@@ -318,6 +324,7 @@ public class CommunityFeedService {
                     .isBookmarked(bookmarkedFeedIds.contains(feed.getId()))
                     .isReposted(repostedFeedIds.contains(feed.getId()))
                     .isFollowing(isFollowing)
+                    .followStatus(followStatus)
                     .build();
 
             result.add(FeedItemResponse.builder()
@@ -472,6 +479,7 @@ public class CommunityFeedService {
         boolean isBookmarked = false;
         boolean isReposted = false;
         boolean isFollowing = false;
+        FollowStatus followStatus = FollowStatus.NONE;
 
         if (userId != null) {
             feedReaction = feedReactionRepository.findByUserIdAndFeedId(userId, feedId).orElse(null);
@@ -482,7 +490,9 @@ public class CommunityFeedService {
             isReposted = feedRepostRepository.existsByUserIdAndSourceFeedId(userId, feedId);
 
             if (!userId.equals(feed.getUserId())) {
-                isFollowing = followRepository.existsByFollowerIdAndFollowingId(userId, feed.getUserId());
+                isFollowing = followRepository.existsByFollowerIdAndFollowingIdAndStatus(userId, feed.getUserId(), FollowStatus.FOLLOWING);
+                boolean isRequested = followRequestRepository.existsByRequesterIdAndTargetIdAndStatus(userId, feed.getUserId(), FollowRequestStatus.PENDING);
+                followStatus = isFollowing ? FollowStatus.FOLLOWING : (isRequested ? FollowStatus.REQUESTED : FollowStatus.NONE);
             }
         }
 
@@ -491,6 +501,7 @@ public class CommunityFeedService {
                 .isBookmarked(isBookmarked)
                 .isReposted(isReposted)
                 .isFollowing(isFollowing)
+                .followStatus(followStatus)
                 .build();
 
         FeedDetailFeedResponse feedDetail = FeedDetailFeedResponse.builder()
