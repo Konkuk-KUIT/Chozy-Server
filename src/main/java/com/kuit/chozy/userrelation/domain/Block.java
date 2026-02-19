@@ -1,6 +1,10 @@
 package com.kuit.chozy.userrelation.domain;
 
+import com.kuit.chozy.auth.entity.TokenStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,8 +32,16 @@ public class Block {
     @Column(nullable = false)
     private boolean active;
 
-    @Column(name = "blocked_at", nullable = false)
-    private LocalDateTime blockedAt;
+    @Enumerated(EnumType.STRING)
+    private TokenStatus status;
+
+    @CreationTimestamp
+    @Column(name="created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name="updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     protected Block() {
     }
@@ -38,7 +50,9 @@ public class Block {
         this.blockerId = blockerId;
         this.blockedId = blockedId;
         this.active = true;
-        this.blockedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+        this.status = TokenStatus.ACTIVE;
     }
 
     public Long getId() {
@@ -58,12 +72,12 @@ public class Block {
     }
 
     public LocalDateTime getBlockedAt() {
-        return blockedAt;
+        return createdAt;
     }
 
     public void activate() {
         this.active = true;
-        this.blockedAt = LocalDateTime.now();
+        this.createdAt = LocalDateTime.now();
     }
 
     public void deactivate() {

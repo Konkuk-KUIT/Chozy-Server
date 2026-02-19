@@ -25,12 +25,12 @@ public interface CloseFriendRepository extends JpaRepository<CloseFriend, Long> 
                 u.nickname,
                 u.profileImageUrl,
                 coalesce(u.isAccountPublic, false),
-                cf.setAt
+                cf.createdAt
             )
             from CloseFriend cf
             join User u on u.id = cf.targetUserId
             where cf.userId = :meUserId
-            order by cf.setAt desc
+            order by cf.createdAt desc
             """)
     Page<CloseFriendItemResponse> findCloseFriendItems(@Param("meUserId") Long meUserId, Pageable pageable);
 }

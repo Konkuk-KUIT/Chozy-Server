@@ -1,6 +1,10 @@
 package com.kuit.chozy.userrelation.domain;
 
+import com.kuit.chozy.auth.entity.TokenStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -22,8 +26,16 @@ public class CloseFriend {
     @Column(name = "target_user_id", nullable = false)
     private Long targetUserId;
 
-    @Column(name = "set_at", nullable = false)
-    private LocalDateTime setAt;
+    @Enumerated(EnumType.STRING)
+    private TokenStatus status;
+
+    @CreationTimestamp
+    @Column(name="created_at", nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name="updated_at", nullable = false)
+    private LocalDateTime updatedAt;
 
     protected CloseFriend() {
     }
@@ -31,7 +43,7 @@ public class CloseFriend {
     public CloseFriend(Long userId, Long targetUserId, LocalDateTime setAt) {
         this.userId = userId;
         this.targetUserId = targetUserId;
-        this.setAt = setAt;
+        this.createdAt = setAt;
     }
 
     public Long getId() {
@@ -47,6 +59,6 @@ public class CloseFriend {
     }
 
     public LocalDateTime getSetAt() {
-        return setAt;
+        return createdAt;
     }
 }

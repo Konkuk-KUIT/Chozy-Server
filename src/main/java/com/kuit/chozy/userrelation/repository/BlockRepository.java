@@ -29,5 +29,5 @@ public interface BlockRepository extends JpaRepository<Block, Long> {
 
     List<Block> findByBlockerIdAndBlockedIdInAndActiveTrue(Long blockerId, Collection<Long> blockedIds);
 
-    Page<Block> findByBlockerIdAndActiveTrueOrderByBlockedAtDesc(Long blockerId, Pageable pageable);
+    Page<Block> findByBlockerIdAndActiveTrueOrderByCreatedAtDesc(Long blockerId, Pageable pageable);
 }
